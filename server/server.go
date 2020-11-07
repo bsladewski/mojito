@@ -1,5 +1,5 @@
-// Package server exposes a server router than can be used to bind API
-// endpoints and provides functions for managing the server.
+// Package server exposes a server router than can be used to bind API endpoints
+// and provides functions for managing the server.
 package server
 
 import (
@@ -34,7 +34,7 @@ const (
 	httpsDefaultPort = 443
 )
 
-// router is used to bind API endpoints
+// router is used to bind API endpoints.
 var router *gin.Engine
 
 // Router retrieves the application server router which can be used to bind
