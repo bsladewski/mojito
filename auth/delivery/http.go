@@ -79,13 +79,13 @@ func login(c *gin.Context) {
 	user, err := auth.GetUserByEmail(c, req.Email)
 	if err == gorm.ErrRecordNotFound {
 		logrus.Warn(err)
-		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
+		c.JSON(http.StatusUnauthorized, httperror.ErrorResponse{
 			ErrorMessage: invalidUserCredentials,
 		})
 		return
 	} else if err != nil {
 		logrus.Error(err)
-		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
+		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
 			ErrorMessage: httperror.InternalServerError,
 		})
 		return
@@ -97,7 +97,7 @@ func login(c *gin.Context) {
 		[]byte(fmt.Sprintf("%d:%s", user.ID, req.Password)),
 	); err != nil {
 		logrus.Debug(err)
-		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
+		c.JSON(http.StatusUnauthorized, httperror.ErrorResponse{
 			ErrorMessage: invalidUserCredentials,
 		})
 		return
@@ -154,7 +154,7 @@ func refresh(c *gin.Context) {
 	userAuth, err := auth.JWTValidateRefreshToken(c, req.RefreshToken)
 	if err != nil {
 		logrus.Warn(err)
-		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
+		c.JSON(http.StatusUnauthorized, httperror.ErrorResponse{
 			ErrorMessage: invalidRefreshToken,
 		})
 		return
@@ -164,7 +164,7 @@ func refresh(c *gin.Context) {
 	user, err := auth.GetUserByID(c, userAuth.UserID)
 	if err != nil {
 		logrus.Error(err)
-		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
+		c.JSON(http.StatusUnauthorized, httperror.ErrorResponse{
 			ErrorMessage: invalidRefreshToken,
 		})
 		return
@@ -200,7 +200,7 @@ func logout(c *gin.Context) {
 	user, err := auth.JWTGetUser(c)
 	if err != nil {
 		logrus.Error(err)
-		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
+		c.JSON(http.StatusUnauthorized, httperror.ErrorResponse{
 			ErrorMessage: logoutFailedGeneric,
 		})
 		return
@@ -210,7 +210,7 @@ func logout(c *gin.Context) {
 	userAuth, err := auth.JWTGetUserAuth(c)
 	if err != nil {
 		logrus.Error(err)
-		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
+		c.JSON(http.StatusUnauthorized, httperror.ErrorResponse{
 			ErrorMessage: logoutFailedGeneric,
 		})
 		return
