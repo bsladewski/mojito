@@ -22,8 +22,18 @@ func GetStringSafe(key, defaultVal string) string {
 	return defaultVal
 }
 
+// MustGetString retrieves the specified environment variable as a string
+// logging a fatal error if the environment variable is not set.
+func MustGetString(key string) string {
+	if val := GetString(key); val != "" {
+		return val
+	}
+	logrus.Fatalf("environment variable '%s' not set", key)
+	return ""
+}
+
 // GetInt retrieves the specified environment variable as an int returning the
-// zer value if the environment variable is not set.
+// zero value if the environment variable is not set.
 func GetInt(key string) (int, error) {
 	val := os.Getenv(key)
 	if val == "" {
@@ -42,6 +52,20 @@ func GetIntSafe(key string, defaultVal int) int {
 		return defaultVal
 	} else if val == 0 {
 		return defaultVal
+	}
+	return val
+}
+
+// MustGetInt retrieves the specified environment variable as an int logging a
+// fatal error if the environment variable is not set or is invalid.
+func MustGetInt(key string) int {
+	val, err := GetInt(key)
+	if err != nil {
+		logrus.Fatal(err)
+		return 0
+	} else if val == 0 {
+		logrus.Fatalf("environment variable '%s' not set", key)
+		return 0
 	}
 	return val
 }
@@ -66,6 +90,20 @@ func GetFloat64Safe(key string, defaultVal float64) float64 {
 		return defaultVal
 	} else if val == 0.0 {
 		return defaultVal
+	}
+	return val
+}
+
+// MustGetFloat64 retrieves the specified environment variable as a float64
+// logging a fatal error if the environment variable not set or is invalid.
+func MustGetFloat64(key string, defaultVal float64) float64 {
+	val, err := GetFloat64(key)
+	if err != nil {
+		logrus.Error(err)
+		return 0.0
+	} else if val == 0.0 {
+		logrus.Fatalf("environment variable '%s' not set", key)
+		return 0.0
 	}
 	return val
 }

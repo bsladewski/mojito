@@ -1,4 +1,12 @@
 // Package data exposes a database handle for persistent storage.
+//
+// Environment:
+//     MOJITO_CONNECTION_STRING
+//         string - the connection string to establish a database connection
+//     MOJITO_IN_MEMORY_DATABASE
+//         boolean - use an in-memory database in place of a real database
+//     MOJITO_USE_MOCK_DATA:
+//         boolean - populate database with mock data on startup
 package data
 
 import (
@@ -40,7 +48,7 @@ func init() {
 	} else {
 		// establish a connection to the application database
 		db, err = gorm.Open(
-			mysql.Open(env.GetString(connectionStringVariable)),
+			mysql.Open(env.MustGetString(connectionStringVariable)),
 			&gorm.Config{},
 		)
 	}
@@ -50,6 +58,9 @@ func init() {
 		// and exit the application
 		logrus.Fatal(err)
 	}
+
+	// check if we should load mock data
+	useMockData = env.GetBoolSafe(useMockDataVariable, false)
 
 }
 
@@ -61,6 +72,9 @@ const (
 	// inMemoryDatabaseVariable defines an environment variable that, if set to
 	// true, will replace the database connection with an in-memory database.
 	inMemoryDatabaseVariable = "MOJITO_IN_MEMORY_DATABASE"
+	// useMockDataVariable defines an environment variable that, if set to true,
+	// will load mock data.
+	useMockDataVariable = "MOJITO_USE_MOCK_DATA"
 	// inMemoryConnectionString defines the string that will be used to create
 	// an in-memory database for testing.
 	inMemoryConnectionString = "file::memory:?cache=shared"
@@ -68,6 +82,9 @@ const (
 
 // db is used to work with persistent storage.
 var db *gorm.DB
+
+// useMockData is used to determine if mock data should be loaded.
+var useMockData bool
 
 // DB retrieves a handle to the application database.
 func DB() *gorm.DB {
@@ -77,4 +94,9 @@ func DB() *gorm.DB {
 // Ping performs a simple against the database to check availability.
 func Ping() error {
 	return db.Raw(`SELECT 1;`).Error
+}
+
+// UseMockData checks whether the current runtime should load mock data.
+func UseMockData() bool {
+	return useMockData
 }

@@ -4,6 +4,7 @@ package main
 import (
 	"github.com/bsladewski/mojito/server"
 
+	_ "github.com/bsladewski/mojito/auth/delivery"
 	_ "github.com/bsladewski/mojito/health"
 )
 
