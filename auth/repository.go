@@ -7,12 +7,13 @@ import (
 	"github.com/bsladewski/mojito/data"
 )
 
-// GetUserByID retrieves a user record by id.
-func GetUserByID(ctx context.Context, id uint) (*User, error) {
+// GetLoginByID retrieves a user login record by id.
+func GetLoginByID(ctx context.Context,
+	id uint) (*Login, error) {
 
-	var item User
+	var item Login
 
-	if err := data.DB().Model(&User{}).
+	if err := data.DB().Model(&Login{}).
 		Where("id = ?", id).
 		First(&item).Error; err != nil {
 		return nil, err
@@ -22,54 +23,13 @@ func GetUserByID(ctx context.Context, id uint) (*User, error) {
 
 }
 
-// GetUserByEmail retrieves a user record by email address.
-func GetUserByEmail(ctx context.Context, email string) (*User, error) {
+// GetLoginByUUID retrieves a user login record by UUID.
+func GetLoginByUUID(ctx context.Context,
+	uuid string) (*Login, error) {
 
-	var item User
+	var item Login
 
-	if err := data.DB().Model(&User{}).
-		Where("LOWER(email) = LOWER(?)", email).
-		First(&item).Error; err != nil {
-		return nil, err
-	}
-
-	return &item, nil
-
-}
-
-// SaveUser inserts or updates the supplied user record.
-func SaveUser(ctx context.Context, item *User) error {
-	return data.DB().Save(item).Error
-}
-
-// DeleteUser deletes the supplied user record.
-func DeleteUser(ctx context.Context, item *User) error {
-	return data.DB().Delete(item).Error
-}
-
-// GetUserAuthByID retrieves a user auth record by id.
-func GetUserAuthByID(ctx context.Context,
-	id uint) (*UserAuth, error) {
-
-	var item UserAuth
-
-	if err := data.DB().Model(&UserAuth{}).
-		Where("id = ?", id).
-		First(&item).Error; err != nil {
-		return nil, err
-	}
-
-	return &item, nil
-
-}
-
-// GetUserAuthByUUID retrieves a user auth record by UUID.
-func GetUserAuthByUUID(ctx context.Context,
-	uuid string) (*UserAuth, error) {
-
-	var item UserAuth
-
-	if err := data.DB().Model(&UserAuth{}).
+	if err := data.DB().Model(&Login{}).
 		Where("uuid = ?", uuid).
 		First(&item).Error; err != nil {
 		return nil, err
@@ -79,14 +39,14 @@ func GetUserAuthByUUID(ctx context.Context,
 
 }
 
-// ListUserAuthByUserID retrieves all user auth records associated with the
+// ListLoginByUserID retrieves all user login records associated with the
 // supplied user id.
-func ListUserAuthByUserID(ctx context.Context,
-	userID uint) ([]*UserAuth, error) {
+func ListLoginByUserID(ctx context.Context,
+	userID uint) ([]*Login, error) {
 
-	var items []*UserAuth
+	var items []*Login
 
-	if err := data.DB().Model(&UserAuth{}).
+	if err := data.DB().Model(&Login{}).
 		Where("user_id = ?", userID).
 		Find(&items).Error; err != nil {
 		return nil, err
@@ -96,21 +56,21 @@ func ListUserAuthByUserID(ctx context.Context,
 
 }
 
-// SaveUserAuth inserts or updates the supplied user auth record.
-func SaveUserAuth(ctx context.Context, item *UserAuth) error {
+// SaveLogin inserts or updates the supplied user login record.
+func SaveLogin(ctx context.Context, item *Login) error {
 	return data.DB().Save(item).Error
 }
 
-// DeleteUserAuth deletes the supplied user auth record.
-func DeleteUserAuth(ctx context.Context, item *UserAuth) error {
+// DeleteLogin deletes the supplied user login record.
+func DeleteLogin(ctx context.Context, item *Login) error {
 	return data.DB().Delete(item).Error
 }
 
-// DeleteExpiredUserAuth deletes all expires user auth records associated with
+// DeleteExpiredLogin deletes all expires user login records associated with
 // the specified user id.
-func DeleteExpiredUserAuth(ctx context.Context, userID uint) error {
+func DeleteExpiredLogin(ctx context.Context, userID uint) error {
 	return data.DB().
 		Where("user_id = ?", userID).
 		Where("expires_at < ?", time.Now()).
-		Delete(&UserAuth{}).Error
+		Delete(&Login{}).Error
 }

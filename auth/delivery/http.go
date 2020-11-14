@@ -8,6 +8,7 @@ import (
 	"github.com/bsladewski/mojito/auth"
 	"github.com/bsladewski/mojito/httperror"
 	"github.com/bsladewski/mojito/server"
+	"github.com/bsladewski/mojito/user"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
@@ -76,7 +77,7 @@ func login(c *gin.Context) {
 	}
 
 	// retrieve user account by email address
-	user, err := auth.GetUserByEmail(c, req.Email)
+	u, err := user.GetUserByEmail(c, req.Email)
 	if err == gorm.ErrRecordNotFound {
 		logrus.Warn(err)
 		c.JSON(http.StatusUnauthorized, httperror.ErrorResponse{
@@ -93,8 +94,8 @@ func login(c *gin.Context) {
 
 	// compare supplied password with user password
 	if err := bcrypt.CompareHashAndPassword(
-		[]byte(user.Password),
-		[]byte(fmt.Sprintf("%d:%s", user.ID, req.Password)),
+		[]byte(u.Password),
+		[]byte(fmt.Sprintf("%d:%s", u.ID, req.Password)),
 	); err != nil {
 		logrus.Debug(err)
 		c.JSON(http.StatusUnauthorized, httperror.ErrorResponse{
@@ -104,7 +105,7 @@ func login(c *gin.Context) {
 	}
 
 	// generate access and refresh tokens
-	accessToken, refreshToken, err := auth.CreateAuth(c, user)
+	accessToken, refreshToken, err := auth.CreateAuth(c, u)
 	if err != nil {
 		logrus.Error(err)
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
@@ -113,9 +114,9 @@ func login(c *gin.Context) {
 		return
 	}
 
-	// delete expired user auth records to keep persistent storage clean
+	// delete expired user login records to keep persistent storage clean
 	go func() {
-		if err := auth.DeleteExpiredUserAuth(c, user.ID); err != nil {
+		if err := auth.DeleteExpiredLogin(c, u.ID); err != nil {
 			logrus.Error(err)
 		}
 	}()
@@ -151,7 +152,7 @@ func refresh(c *gin.Context) {
 	}
 
 	// validate the supplied refresh token
-	userAuth, err := auth.JWTValidateRefreshToken(c, req.RefreshToken)
+	login, err := auth.JWTValidateRefreshToken(c, req.RefreshToken)
 	if err != nil {
 		logrus.Warn(err)
 		c.JSON(http.StatusUnauthorized, httperror.ErrorResponse{
@@ -161,7 +162,7 @@ func refresh(c *gin.Context) {
 	}
 
 	// retrieve user record
-	user, err := auth.GetUserByID(c, userAuth.UserID)
+	u, err := user.GetUserByID(c, login.UserID)
 	if err != nil {
 		logrus.Error(err)
 		c.JSON(http.StatusUnauthorized, httperror.ErrorResponse{
@@ -171,7 +172,7 @@ func refresh(c *gin.Context) {
 	}
 
 	// generate access and refresh tokens
-	accessToken, refreshToken, err := auth.CreateAuth(c, user)
+	accessToken, refreshToken, err := auth.CreateAuth(c, u)
 	if err != nil {
 		logrus.Error(err)
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
@@ -181,7 +182,7 @@ func refresh(c *gin.Context) {
 	}
 
 	// delete original refresh token
-	if err := auth.DeleteUserAuth(c, userAuth); err != nil {
+	if err := auth.DeleteLogin(c, login); err != nil {
 		logrus.Error(err)
 	}
 
@@ -197,7 +198,7 @@ func refresh(c *gin.Context) {
 func logout(c *gin.Context) {
 
 	// get user from JWT
-	user, err := auth.JWTGetUser(c)
+	u, err := auth.JWTGetUser(c)
 	if err != nil {
 		logrus.Error(err)
 		c.JSON(http.StatusUnauthorized, httperror.ErrorResponse{
@@ -207,7 +208,7 @@ func logout(c *gin.Context) {
 	}
 
 	// get user auth record from JWT
-	userAuth, err := auth.JWTGetUserAuth(c)
+	login, err := auth.JWTGetUserLogin(c)
 	if err != nil {
 		logrus.Error(err)
 		c.JSON(http.StatusUnauthorized, httperror.ErrorResponse{
@@ -217,7 +218,7 @@ func logout(c *gin.Context) {
 	}
 
 	// delete user auth record, this will invalidate the refresh token
-	if err := auth.DeleteUserAuth(c, userAuth); err != nil {
+	if err := auth.DeleteLogin(c, login); err != nil {
 		logrus.Error(err)
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
 			ErrorMessage: logoutFailedGeneric,
@@ -227,10 +228,10 @@ func logout(c *gin.Context) {
 
 	// set logged out at time, this will invalidate all access tokens issued
 	// before this time
-	user.LoggedOutAt = time.Now()
+	u.LoggedOutAt = time.Now()
 
 	// update the user record
-	if err := auth.SaveUser(c, user); err != nil {
+	if err := user.SaveUser(c, u); err != nil {
 		logrus.Error(err)
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
 			ErrorMessage: logoutFailedGeneric,

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/bsladewski/mojito/httperror"
+	"github.com/bsladewski/mojito/user"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -53,50 +54,50 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 }
 
 // JWTGetUser extracts a user record from the request access token.
-func JWTGetUser(c *gin.Context) (*User, error) {
+func JWTGetUser(c *gin.Context) (*user.User, error) {
 
 	metadata, err := jwtGetAccessMetadata(c)
 	if err != nil {
 		return nil, err
 	}
 
-	return GetUserByID(c, metadata.userID)
+	return user.GetUserByID(c, metadata.userID)
 
 }
 
-// JWTGetUserAuth extracts a user auth record from the request access token.
-func JWTGetUserAuth(c *gin.Context) (*UserAuth, error) {
+// JWTGetUserLogin extracts a user login record from the request access token.
+func JWTGetUserLogin(c *gin.Context) (*Login, error) {
 
 	metadata, err := jwtGetAccessMetadata(c)
 	if err != nil {
 		return nil, err
 	}
 
-	return GetUserAuthByUUID(c, metadata.authUUID)
+	return GetLoginByUUID(c, metadata.authUUID)
 
 }
 
 // JWTValidateRefreshToken checks whether the supplied refresh token is valid,
-// returns the associated user auth record if the token is valid.
+// returns the associated user login record if the token is valid.
 func JWTValidateRefreshToken(c *gin.Context,
-	refreshToken string) (*UserAuth, error) {
+	refreshToken string) (*Login, error) {
 
 	metadata, err := jwtGetRefreshMetadata(c, refreshToken)
 	if err != nil {
 		return nil, err
 	}
 
-	userAuth, err := GetUserAuthByUUID(c, metadata.authUUID)
+	login, err := GetLoginByUUID(c, metadata.authUUID)
 	if err != nil {
 		return nil, err
 	}
 
 	if metadata.expiresAt.Before(time.Now()) ||
-		userAuth.ExpiresAt.Before(time.Now()) {
+		login.ExpiresAt.Before(time.Now()) {
 		return nil, errors.New("refresh token expired")
 	}
 
-	return userAuth, nil
+	return login, nil
 
 }
 
@@ -108,13 +109,13 @@ func jwtAccessTokenValid(c *gin.Context) error {
 		return err
 	}
 
-	user, err := GetUserByID(c, metadata.userID)
+	u, err := user.GetUserByID(c, metadata.userID)
 	if err != nil {
 		return err
 	}
 
 	if metadata.expiresAt.Before(time.Now()) ||
-		metadata.createdAt.Before(user.LoggedOutAt) {
+		metadata.createdAt.Before(u.LoggedOutAt) {
 		return errors.New("access token expired")
 	}
 

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/bsladewski/mojito/env"
+	"github.com/bsladewski/mojito/user"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/twinj/uuid"
 )
@@ -60,7 +61,7 @@ var accessExpirationHours time.Duration
 var refreshExpirationHours time.Duration
 
 // CreateAuth generates JWT access and refresh tokens for the supplied user.
-func CreateAuth(ctx context.Context, user *User) (accessToken,
+func CreateAuth(ctx context.Context, u *user.User) (accessToken,
 	refreshToken string, err error) {
 
 	// generate UUID to track issued credentials in peristent storage
@@ -69,7 +70,7 @@ func CreateAuth(ctx context.Context, user *User) (accessToken,
 	// create the access token
 	accessJWT := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"auth_uuid":  authUUID,
-		"user_id":    user.ID,
+		"user_id":    u.ID,
 		"created_at": time.Now().Unix(),
 		"expires_at": time.Now().Add(accessExpirationHours).Unix(),
 	})
@@ -84,7 +85,7 @@ func CreateAuth(ctx context.Context, user *User) (accessToken,
 
 	refreshJWT := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"auth_uuid":  authUUID,
-		"user_id":    user.ID,
+		"user_id":    u.ID,
 		"created_at": time.Now().Unix(),
 		"expires_at": refreshExpiration.Unix(),
 	})
@@ -95,8 +96,8 @@ func CreateAuth(ctx context.Context, user *User) (accessToken,
 	}
 
 	// add the user auth record
-	if err := SaveUserAuth(ctx, &UserAuth{
-		UserID:    user.ID,
+	if err := SaveLogin(ctx, &Login{
+		UserID:    u.ID,
 		UUID:      authUUID,
 		ExpiresAt: refreshExpiration,
 	}); err != nil {
