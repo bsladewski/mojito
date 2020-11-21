@@ -38,7 +38,9 @@ type User struct {
 
 	Email    string `gorm:"index,unique" json:"email"`
 	Password string `json:"password"`
-	Verified bool   `json:"verified"`
+
+	SecretKey string `json:"secret_key"`
+	Verified  bool   `json:"verified"`
 
 	LoggedOutAt time.Time `json:"logged_out_at"`
 }
@@ -48,9 +50,10 @@ type User struct {
 // mockUsers defines mock data for the user type.
 var mockUsers = []User{
 	{
-		ID:       1,
-		Email:    "test@mojitobot.com",
-		Password: "$2a$10$38cznnVvOXAd4fFZH/M89efgJP3LB0p2NnyXystHkRlxrSeL2tkvS", // mojito
-		Verified: true,
+		ID:        1,
+		Email:     "test@mojitobot.com",
+		Password:  "$2a$10$38cznnVvOXAd4fFZH/M89efgJP3LB0p2NnyXystHkRlxrSeL2tkvS", // mojito
+		SecretKey: "8bf83c80-f235-461e-9bd7-00c83a5cfff8",
+		Verified:  true,
 	},
 }

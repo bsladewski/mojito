@@ -6,6 +6,7 @@ import (
 
 	_ "github.com/bsladewski/mojito/auth/delivery"
 	_ "github.com/bsladewski/mojito/health"
+	_ "github.com/bsladewski/mojito/user/delivery"
 )
 
 // main stands up a mojito server.

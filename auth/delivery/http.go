@@ -25,8 +25,7 @@ func init() {
 	server.Router().POST(refreshEndpoint, refresh)
 
 	// bind private endpoints
-	private := server.Router().Use(auth.JWTAuthMiddleware())
-	private.POST(logoutEndpoint, logout)
+	server.Router().POST(logoutEndpoint, auth.JWTAuthMiddleware(), logout)
 }
 
 const (
