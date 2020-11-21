@@ -19,7 +19,7 @@ func init() {
 	smtpPort = env.GetIntSafe(smtpPortVariable, 25)
 
 	// retrieve default from address
-	defaultFromAddress = env.MustGetString(defaultFromAddressVariable)
+	smtpDefaultFromAddress = env.MustGetString(smtpDefaultFromAddressVariable)
 
 }
 
@@ -34,9 +34,9 @@ const (
 	smtpHostVariable = "MOJITO_SMTP_HOST"
 	// smtpPortVariable defines an environment variable for the SMTP port.
 	smtpPortVariable = "MOJITO_SMTP_PORT"
-	// defaultFromAddressVariable defines an environement variable for the
-	// default email address used when sending emails.
-	defaultFromAddressVariable = "MOJITO_DEFAULT_FROM_ADDRESS"
+	// smtpDefaultFromAddressVariable defines an environement variable for the
+	// default email address used when sending emails through SMTP.
+	smtpDefaultFromAddressVariable = "MOJITO_SMTP_DEFAULT_FROM_ADDRESS"
 )
 
 // smtpUsername is used to authenticate with an SMTP server to send emails.
@@ -55,12 +55,12 @@ var smtpPort int
 // environment.
 var smtpEnabled bool
 
-// defaultFromAddress stores the default application from email address.
-var defaultFromAddress string
+// smtpDefaultFromAddress stores the default application from email address.
+var smtpDefaultFromAddress string
 
 // DefaultFromAddress is the application default from email address.
 func DefaultFromAddress() string {
-	return defaultFromAddress
+	return smtpDefaultFromAddress
 }
 
 // SendEmailTemplate formats the specified email template and sends the email

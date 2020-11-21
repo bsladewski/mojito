@@ -1,5 +1,13 @@
 // Package server exposes a server router than can be used to bind API endpoints
 // and provides functions for managing the server.
+//
+// Environment:
+//     MOJITO_PORT
+//         int - the port on which we listen for incoming requests
+//     MOJITO_CERT
+//         string - the path to the certificate used for TLS encryption.
+//     MOJITO_KEY:
+//         string - the path to the key used for TLS encryption.
 package server
 
 import (
