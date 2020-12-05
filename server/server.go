@@ -3,47 +3,144 @@
 //
 // Environment:
 //     MOJITO_PORT
-//         int - the port on which we listen for incoming requests
+//         int - the port on which we listen for incoming requests.
 //     MOJITO_CERT
 //         string - the path to the certificate used for TLS encryption.
 //     MOJITO_KEY:
 //         string - the path to the key used for TLS encryption.
+//     MOJITO_CORS_ALLOW_ORIGINS
+//         string - a comma separated list of origins a cross-domain request
+//                  can be executed from.
+//                  Default: *
+//     MOJITO_CORS_ALLOW_METHODS
+//         string - a comma separated list of HTTP methods a client is allowed
+//                  to use in a cross-domain request.
+//                  Default: POST, GET, PUT, PATCH, DELETE
+//     MOJITO_CORS_ALLOW_HEADERS
+//         string - a comma separated list of headers a client is allowed to use
+//                  in a cross-domain request.
+//                  Default: Accept, Content-Type, Content-Length,
+//                           Accept-Encoding, X-CSRF-Token, Authorization,
+//                           Origin, Cache-Control, X-Requested-With
+//     MOJITO_CORS_ALLOW_CREDENTIALS
+//         bool - a flag that indicates whether a cross-domain request may
+//                include user credentials.
+//                Default: true
+//     MOJITO_CORS_EXPOSE_HEADERS
+//         string - a comma separated list of headers the server may expose in
+//                  responses to cross-domain requests.
+//                  Default: X-Requested-With, X-Total-Records
+//     MOJITO_CORS_MAX_AGE
+//         int - the number of seconds a preflight response may be cached.
+//               Default: 600
 package server
 
 import (
 	"fmt"
+	"regexp"
+	"time"
 
 	"github.com/bsladewski/mojito/env"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
 // init initializes the application server router.
 func init() {
-	if router == nil {
-		router = gin.Default()
+
+	if router != nil {
+		return
 	}
+
+	r := regexp.MustCompile("\\s*,\\s*")
+
+	// parse CORS settings from environment
+	allowOrigins = r.Split(env.GetStringSafe(allowOriginsVariable,
+		"*"), -1)
+	allowMethods = r.Split(env.GetStringSafe(allowMethodsVariable,
+		"POST,GET,PUT,PATCH,DELETE"), -1)
+	allowHeaders = r.Split(env.GetStringSafe(allowHeadersVariable,
+		"Accept,Content-Type,Content-Length,Accept-Encoding,X-CSRF-Token,Authorization,Origin,Cache-Control,X-Requested-With"), -1)
+	allowCredentials = env.GetBoolSafe(allowCredentialsVariable, true)
+	exposeHeaders = r.Split(env.GetStringSafe(exposeHeadersVariable,
+		"X-Requested-With,X-Total-Records"), -1)
+	preflightMaxAge = env.GetIntSafe(preflightMaxAgeVariable, 600)
+
+	// initialize application server router
+	router = gin.Default()
+
+	// initialize CORS middleware
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     allowOrigins,
+		AllowMethods:     allowMethods,
+		AllowHeaders:     allowHeaders,
+		AllowCredentials: allowCredentials,
+		ExposeHeaders:    exposeHeaders,
+		MaxAge:           time.Duration(preflightMaxAge) * time.Second,
+	}))
 }
 
 const (
-	// PortVariable defines the environment variable for the server port.
+	// portVariable defines the environment variable for the server port.
 	portVariable = "MOJITO_PORT"
-	// TLSCertVariable defines the environment variable for the TLS certificate.
+	// tlsCertVariable defines the environment variable for the TLS certificate.
 	// If set the server will be run using TLS encryption.
 	tlsCertVariable = "MOJITO_CERT"
-	// TLSKeyVariable defines the environment variable for the TLS key. If set
+	// tlsKeyVariable defines the environment variable for the TLS key. If set
 	// the server will run using TLS encryption.
 	tlsKeyVariable = "MOJITO_KEY"
-	// HTTPDefaultPort the default port when running the server without TLS
+	// httpDefaultPort the default port when running the server without TLS
 	// encryption and no explicit port.
 	httpDefaultPort = 80
-	// HTTPSDefaultPort the default port when running the server with TLS
+	// httpsDefaultPort the default port when running the server with TLS
 	// encryption and no explicit port.
 	httpsDefaultPort = 443
+	// allowOriginsVariable defines the environment variable for the allow
+	// origins CORS policy.
+	allowOriginsVariable = "MOJITO_CORS_ALLOW_ORIGINS"
+	// allowMethodsVariable defines the environment variable for the allow
+	// methods CORS policy.
+	allowMethodsVariable = "MOJITO_CORS_ALLOW_METHODS"
+	// allowHeadersVariable defines the environment variable for the allow
+	// headers CORS policy.
+	allowHeadersVariable = "MOJITO_CORS_ALLOW_HEADERS"
+	// allowCredentialsVariable defines the environment variable for the allow
+	// credentials CORS policy.
+	allowCredentialsVariable = "MOJITO_CORS_ALLOW_CREDENTIALS"
+	// exposeHeadersVariable defines the environment variable for the expose
+	// headers CORS policy.
+	exposeHeadersVariable = "MOJITO_CORS_EXPOSE_HEADERS"
+	// preflightMaxAgeVariable defines the environment variables for the max age
+	// of cached preflight reponse.
+	preflightMaxAgeVariable = "MOJITO_CORS_MAX_AGE"
 )
 
 // router is used to bind API endpoints.
 var router *gin.Engine
+
+// allowOrigins determines which origins may execute a cross-domain request.
+var allowOrigins []string
+
+// allowMethods determines which HTTP methods a client may use in a cross-domain
+// request.
+var allowMethods []string
+
+// allowHeaders determines which headers may be supplied in a cross-domain
+// request.
+var allowHeaders []string
+
+// allowCredentials determines whether a cross-domain request may include user
+// credentials.
+var allowCredentials bool
+
+// exposeHeaders determines which headers the server may expose in responses to
+// cross-domain requests.
+var exposeHeaders []string
+
+// preflightMaxAge determines how long in seconds we may cache a response to a
+// preflight request.
+var preflightMaxAge int
 
 // Router retrieves the application server router which can be used to bind
 // handler functions to API endpoints.
