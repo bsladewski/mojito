@@ -36,5 +36,6 @@ type recoverResetRequest struct {
 // resetRequest is used to read a request to reset the logged in user's account
 // password
 type resetRequest struct {
-	Password string `json:"password"`
+	CurrentPassword string `json:"current_password"`
+	NewPassword     string `json:"new_password"`
 }

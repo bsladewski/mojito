@@ -344,9 +344,36 @@ func reset(c *gin.Context) {
 		return
 	}
 
+	// validate request parameters
+	if req.CurrentPassword == "" {
+		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
+			ErrorMessage: "current password is required",
+		})
+		return
+	}
+
+	if req.NewPassword == "" {
+		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
+			ErrorMessage: "new password is required",
+		})
+		return
+	}
+
+	// verify current password
+	if err := bcrypt.CompareHashAndPassword(
+		[]byte(u.Password),
+		[]byte(fmt.Sprintf("%d:%s", u.ID, req.CurrentPassword)),
+	); err != nil {
+		logrus.Debug(err)
+		c.JSON(http.StatusUnauthorized, httperror.ErrorResponse{
+			ErrorMessage: "current password is incorrect",
+		})
+		return
+	}
+
 	// set user password
 	hash, err := bcrypt.GenerateFromPassword(
-		[]byte(fmt.Sprintf("%d:%s", u.ID, req.Password)), bcrypt.DefaultCost)
+		[]byte(fmt.Sprintf("%d:%s", u.ID, req.NewPassword)), bcrypt.DefaultCost)
 	if err != nil {
 		logrus.Error(err)
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
