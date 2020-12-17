@@ -154,7 +154,7 @@ func refresh(c *gin.Context) {
 	login, err := auth.JWTValidateRefreshToken(c, req.RefreshToken)
 	if err != nil {
 		logrus.Warn(err)
-		c.JSON(http.StatusUnauthorized, httperror.ErrorResponse{
+		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
 			ErrorMessage: invalidRefreshToken,
 		})
 		return
@@ -164,7 +164,7 @@ func refresh(c *gin.Context) {
 	u, err := user.GetUserByID(c, login.UserID)
 	if err != nil {
 		logrus.Error(err)
-		c.JSON(http.StatusUnauthorized, httperror.ErrorResponse{
+		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
 			ErrorMessage: invalidRefreshToken,
 		})
 		return
