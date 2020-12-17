@@ -365,8 +365,16 @@ func reset(c *gin.Context) {
 		[]byte(fmt.Sprintf("%d:%s", u.ID, req.CurrentPassword)),
 	); err != nil {
 		logrus.Debug(err)
-		c.JSON(http.StatusUnauthorized, httperror.ErrorResponse{
+		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
 			ErrorMessage: "current password is incorrect",
+		})
+		return
+	}
+
+	// check that current password is not the same as the new password
+	if req.CurrentPassword == req.NewPassword {
+		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
+			ErrorMessage: "new and current passwords are the same",
 		})
 		return
 	}
