@@ -12,8 +12,8 @@ type signupEmailData struct {
 	VerificationToken string
 }
 
-// verifyRequest is used to read a request to the verify endpoint.
-type verifyRequest struct {
+// signupVerifyRequest is used to read a request to the verify endpoint.
+type signupVerifyRequest struct {
 	Token string `json:"token"`
 }
 

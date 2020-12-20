@@ -22,7 +22,7 @@ func init() {
 
 	// bind public endpoints
 	server.Router().POST(signupEndpoint, signup)
-	server.Router().POST(verifyEndpoint, verify)
+	server.Router().POST(signupVerifyEndpoint, signupVerify)
 	server.Router().POST(recoverEndpoint, recover)
 	server.Router().POST(recoverResetEndpoint, recoverReset)
 
@@ -33,9 +33,9 @@ func init() {
 const (
 	// signupEndpoint the API endpoint used to create new user accounts.
 	signupEndpoint = "/signup"
-	// verifyEndpoint the API endpoint used to verify a new user's email
+	// signupVerifyEndpoint the API endpoint used to verify a new user's email
 	// address.
-	verifyEndpoint = "/verify"
+	signupVerifyEndpoint = "/signup/verify"
 	// recoverEndpoint the API endpoint used to send account recovery emails.
 	recoverEndpoint = "/recover"
 	// recoverResetEndpoint the API endpoint for resetting an account password
@@ -170,11 +170,11 @@ func signup(c *gin.Context) {
 
 }
 
-// verify checks the supplied verification token to determine if the user has
-// access to the account email address.
-func verify(c *gin.Context) {
+// signupVerify checks the supplied verification token to determine if the user
+// has access to the account email address.
+func signupVerify(c *gin.Context) {
 
-	var req verifyRequest
+	var req signupVerifyRequest
 
 	// read request parameters
 	if err := c.BindJSON(&req); err != nil {
