@@ -1,9 +1,15 @@
 package email
 
 import (
-	"fmt"
+	"errors"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ses"
 	"github.com/bsladewski/mojito/env"
+	"github.com/sirupsen/logrus"
+
 	"gorm.io/gorm"
 
 	"gopkg.in/gomail.v2"
@@ -13,13 +19,33 @@ import (
 func init() {
 
 	// retrieve SMTP settings from the environment
-	smtpUsername = env.MustGetString(smtpUsernameVariable)
-	smtpPassword = env.MustGetString(smtpPasswordVariable)
-	smtpHost = env.MustGetString(smtpHostVariable)
+	smtpUsername = env.GetStringSafe(smtpUsernameVariable, "")
+	smtpPassword = env.GetStringSafe(smtpPasswordVariable, "")
+	smtpHost = env.GetStringSafe(smtpHostVariable, "")
 	smtpPort = env.GetIntSafe(smtpPortVariable, 25)
 
-	// retrieve default from address
-	smtpDefaultFromAddress = env.MustGetString(smtpDefaultFromAddressVariable)
+	// retrieve SES settings from the environment.
+	sesAccessKeyID = env.GetStringSafe(sesAccessKeyIDVariable, "")
+	sesAccessKeySecret = env.GetStringSafe(sesAccessKeySecretVariable, "")
+	sesRegion = env.GetStringSafe(sesRegionVariable, "")
+
+	// determine email sending method based on environment configuration
+	if smtpUsername != "" && smtpPassword != "" && smtpHost != "" {
+		sendingMethod = sendingMethodSMTP
+	} else if sesRegion != "" && sesAccessKeyID != "" && sesAccessKeySecret != "" {
+		sendingMethod = sendingMehtodSES
+	}
+
+	// if no email sending method was configured log a fatal error
+	if sendingMethod == "" {
+		logrus.Fatal("no email sending method was specified")
+	}
+
+	logEmails = env.GetBoolSafe(logEmailsVariable, false)
+
+	// retrieve default from and reply-to addresses
+	defaultFromAddress = env.MustGetString(defaultFromAddressVariable)
+	defaultReplyToAddress = env.MustGetString(defaultReplyToAddressVariable)
 
 }
 
@@ -34,9 +60,28 @@ const (
 	smtpHostVariable = "MOJITO_SMTP_HOST"
 	// smtpPortVariable defines an environment variable for the SMTP port.
 	smtpPortVariable = "MOJITO_SMTP_PORT"
-	// smtpDefaultFromAddressVariable defines an environement variable for the
-	// default email address used when sending emails through SMTP.
-	smtpDefaultFromAddressVariable = "MOJITO_SMTP_DEFAULT_FROM_ADDRESS"
+	// sesRegionVariable defines an environment variable for the AWS region to
+	// use when sending emails.
+	sesRegionVariable = "MOJITO_SES_REGION"
+	// sesAccessKeyIDVariable defines an environment variable for the AWS access
+	// key id to use when sending emails.
+	sesAccessKeyIDVariable = "MOJITO_SES_ACCESS_KEY_ID"
+	// sesAccessKeySecretVariable defines an environment variable for the AWS
+	// access key secret to use when sending emails.
+	sesAccessKeySecretVariable = "MOJITO_SES_ACCESS_KEY_SECRET"
+	// defaultFromAddressVariable defines an environement variable for the
+	// default email address used when sending emails.
+	defaultFromAddressVariable = "MOJITO_DEFAULT_FROM_ADDRESS"
+	// defaultReplyToAddressVariable defines an environment variable for the
+	// default reply-to email address used when sending emails.
+	defaultReplyToAddressVariable = "MOJITO_DEFAULT_REPLY_TO_ADDRESS"
+	// logEmailsVariable defines an evironment variable that determines whether
+	// we should log the results of sending emails.
+	logEmailsVariable = "MOJITO_LOG_EMAILS"
+	// sendingMethodSMTP indicates emails should be sent through SMTP.
+	sendingMethodSMTP = "SMTP"
+	// sendingMethodSES indicates emails should be sent through Amazon SES.
+	sendingMehtodSES = "SES"
 )
 
 // smtpUsername is used to authenticate with an SMTP server to send emails.
@@ -51,22 +96,41 @@ var smtpHost string
 // smtpPort is the port of an SMTP server to use for sending emails.
 var smtpPort int
 
-// smtpEnabled stores whether we able to get the SMTP configuration from the
-// environment.
-var smtpEnabled bool
+// sesAccessKeyID stores the AWS access key id for sending emails.
+var sesAccessKeyID string
 
-// smtpDefaultFromAddress stores the default application from email address.
-var smtpDefaultFromAddress string
+// sesAccessKeySecret stores the AWS access key secret for sending emails.
+var sesAccessKeySecret string
+
+// sesRegion stores the AWS region for sending emails.
+var sesRegion string
+
+// sendingMethod stores how emails should be send based on the configuration.
+var sendingMethod string
+
+// defaultFromAddress stores the default application from email address.
+var defaultFromAddress string
+
+// defaultReplyToAddress stores the default application reply-to email address.
+var defaultReplyToAddress string
+
+// logEmails stores whether we should create a log of all emails sent.
+var logEmails bool
 
 // DefaultFromAddress is the application default from email address.
 func DefaultFromAddress() string {
-	return smtpDefaultFromAddress
+	return defaultFromAddress
+}
+
+// DefaultReplyToAddress is the application default reply-to email address.
+func DefaultReplyToAddress() string {
+	return defaultReplyToAddress
 }
 
 // SendEmailTemplate formats the specified email template and sends the email
 // through SMTP.
 func SendEmailTemplate(
-	from string,
+	from, replyTo string,
 	to, cc, bcc []string,
 	templateTitle TemplateTitle,
 	data interface{},
@@ -88,18 +152,24 @@ func SendEmailTemplate(
 	}
 
 	// send the email
-	return SendEmail(from, to, cc, bcc, subject, bodyText, bodyHTML)
+	switch sendingMethod {
+	case sendingMethodSMTP:
+		return SendEmailSMTP(from, replyTo, to, cc, bcc, subject, bodyText,
+			bodyHTML)
+	case sendingMehtodSES:
+		return SendEmailSES(from, replyTo, to, cc, bcc, subject, bodyText,
+			bodyHTML)
+	}
 
+	return errors.New("no email sending method specified")
 }
 
-// SendEmail sends an email through SMTP.
-func SendEmail(
-	from string,
+// SendEmailSMTP sends an email through SMTP.
+func SendEmailSMTP(
+	from, replyTo string,
 	to, cc, bcc []string,
 	subject, bodyText, bodyHTML string,
 ) error {
-
-	fmt.Println(from, to, cc, bcc, subject, bodyText, bodyHTML)
 
 	// initialize SMTP client
 	dialer := gomail.NewDialer(smtpHost, smtpPort, smtpUsername, smtpPassword)
@@ -109,6 +179,9 @@ func SendEmail(
 
 	// set sender
 	message.SetHeader("From", from)
+
+	// set reply address
+	message.SetHeader("Reply-To", replyTo)
 
 	// set recipients
 	message.SetHeader("To", to...)
@@ -136,6 +209,110 @@ func SendEmail(
 	}
 
 	// send email
-	return dialer.DialAndSend(message)
+	err := dialer.DialAndSend(message)
+
+	if !logEmails {
+		return err
+	}
+
+	// log the result of sending the email
+	if err := createEmailLog(sendingMethod, 0, to, cc, bcc, subject, bodyText,
+		bodyHTML, err); err != nil {
+		logrus.Error(err)
+	}
+
+	return err
+
+}
+
+// SendEmailSES sends an email through Amazon SES.
+func SendEmailSES(
+	from, replyTo string,
+	to, cc, bcc []string,
+	subject, bodyText, bodyHTML string,
+) error {
+
+	// create AWS session
+	awsSession := session.New(&aws.Config{
+		Region: aws.String(sesRegion),
+		Credentials: credentials.NewStaticCredentials(
+			sesAccessKeyID,
+			sesAccessKeySecret,
+			""),
+	})
+
+	sesSession := ses.New(awsSession)
+
+	// prepare request parameters
+	var toAddresses []*string
+	if len(to) > 0 {
+		toAddresses = aws.StringSlice(to)
+	}
+
+	var ccAddresses []*string
+	if len(cc) > 0 {
+		ccAddresses = aws.StringSlice(cc)
+	}
+
+	var bccAddresses []*string
+	if len(bcc) > 0 {
+		bccAddresses = aws.StringSlice(bcc)
+	}
+
+	var bodyTextContent *string
+	if bodyText != "" {
+		bodyTextContent = aws.String(bodyText)
+	}
+
+	var bodyHTMLContent *string
+	if bodyHTML != "" {
+		bodyHTMLContent = aws.String(bodyHTML)
+	}
+
+	var subjectContent *string
+	if subject != "" {
+		subjectContent = aws.String(subject)
+	}
+
+	// create payload
+	sesEmailInput := &ses.SendEmailInput{
+		Destination: &ses.Destination{
+			ToAddresses:  toAddresses,
+			CcAddresses:  ccAddresses,
+			BccAddresses: bccAddresses,
+		},
+		Message: &ses.Message{
+			Body: &ses.Body{
+				Text: &ses.Content{
+					Data: bodyTextContent,
+				},
+				Html: &ses.Content{
+					Data: bodyHTMLContent,
+				},
+			},
+			Subject: &ses.Content{
+				Data: subjectContent,
+			},
+		},
+		Source: aws.String(from),
+		ReplyToAddresses: []*string{
+			aws.String(replyTo),
+		},
+	}
+
+	// send email
+	_, err := sesSession.SendEmail(sesEmailInput)
+
+	if !logEmails {
+		return err
+	}
+
+	// log the result of sending the email
+	if err := createEmailLog(sendingMethod, 0, to, cc, bcc, subject, bodyText,
+		bodyHTML, err); err != nil {
+		logrus.Error(err)
+	}
+
+	return err
 
 }

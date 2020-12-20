@@ -33,6 +33,8 @@
 //     MOJITO_CORS_MAX_AGE
 //         int - the number of seconds a preflight response may be cached.
 //               Default: 600
+//     MOJITO_CLIENT_HOST
+//         string - the host that is used to server the application front-end.
 package server
 
 import (
@@ -66,6 +68,9 @@ func init() {
 	exposeHeaders = r.Split(env.GetStringSafe(exposeHeadersVariable,
 		"X-Requested-With,X-Total-Records"), -1)
 	preflightMaxAge = env.GetIntSafe(preflightMaxAgeVariable, 600)
+
+	// get client host
+	clientHost = env.MustGetString(clientHostVariable)
 
 	// initialize application server router
 	router = gin.Default()
@@ -111,9 +116,12 @@ const (
 	// exposeHeadersVariable defines the environment variable for the expose
 	// headers CORS policy.
 	exposeHeadersVariable = "MOJITO_CORS_EXPOSE_HEADERS"
-	// preflightMaxAgeVariable defines the environment variables for the max age
+	// preflightMaxAgeVariable defines the environment variable for the max age
 	// of cached preflight reponse.
 	preflightMaxAgeVariable = "MOJITO_CORS_MAX_AGE"
+	// clientHostVariable defines the environment variable for the host that is
+	// used to serve the application front-end.
+	clientHostVariable = "MOJITO_CLIENT_HOST"
 )
 
 // router is used to bind API endpoints.
@@ -142,10 +150,19 @@ var exposeHeaders []string
 // preflight request.
 var preflightMaxAge int
 
+// clientHost stores the host that serves the application front-end for use in
+// formatting links.
+var clientHost string
+
 // Router retrieves the application server router which can be used to bind
 // handler functions to API endpoints.
 func Router() *gin.Engine {
 	return router
+}
+
+// ClientHost retrieves the client host.
+func ClientHost() string {
+	return clientHost
 }
 
 // Run starts the application server. Returns when the server is terminated.

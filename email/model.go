@@ -12,6 +12,7 @@ import (
 func init() {
 	data.DB().AutoMigrate(
 		emailTemplate{},
+		emailLog{},
 	)
 
 	// check if we should use mock data
@@ -42,6 +43,20 @@ type emailTemplate struct {
 	BodyHTML string        `json:"body_html"`
 }
 
+// emailLog is used to store a log of emails that have been sent or errors
+// encountered when attempting to send emails.
+type emailLog struct {
+	ID        uint           `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+
+	Method          string `json:"method"`
+	OriginalEmailID uint   `gorm:"index" json:"original_email_id"`
+	Data            string `gorm:"type:text" json:"data"`
+	Error           string `gorm:"index" json:"error"`
+}
+
 /* Mock Data */
 
 // mockEmailTemplates defines mock data for the template type.
@@ -55,14 +70,14 @@ var mockEmailTemplates = []emailTemplate{
 		ID:       2,
 		Title:    TemplateTitleSignup,
 		Subject:  "Welcome to Mojito! Please verify your email address.",
-		BodyText: "Welcome to Mojito!\n\nBefore you begin, please verify your email address.\n\nTo verify your account please click the following link:\nhttp://example.com?token={{.VerificationToken}}\n\nThank you!\nThe Mojito Team",
-		BodyHTML: "Welcome to Mojito!<br><br>Before you begin, please verify your email address.<br><br><br><center><a style=\"border-radius: 5px; background-color: #007bff; color: white; padding: 1em 1.5em; text-decoration: none;\" href=\"http://example.com/verify?token={{.VerificationToken}}\">Verify My Email</a></center><br><br>Thank you!<br>The Mojito Team",
+		BodyText: "Welcome to Mojito!\n\nBefore you begin, please verify your email address.\n\nTo verify your account please click the following link:\n{{.ClientHost}}/verify?token={{.VerificationToken}}\n\nThank you!\nThe Mojito Team",
+		BodyHTML: "Welcome to Mojito!<br><br>Before you begin, please verify your email address.<br><br><br><center><a style=\"border-radius: 5px; background-color: #007bff; color: white; padding: 1em 1.5em; text-decoration: none;\" href=\"{{.ClientHost}}/verify?token={{.VerificationToken}}\">Verify My Email</a></center><br><br>Thank you!<br>The Mojito Team",
 	},
 	{
 		ID:       3,
 		Title:    TemplateTitleRecover,
 		Subject:  "Recover your Mojito account.",
-		BodyText: "You recently requested to recover your Mojito account.\n\nTo recover your account please click the following link:\nhttp://example.com?token={{.VerificationToken}}}\n\nIf you did not initiate this request please disregard this email.\n\nThank you!\nThe Mojito Team",
-		BodyHTML: "You recently requested to recover your Mojito account.<br><br><br><center><a style=\"border-radius: 5px; background-color: #007bff; color: white; padding: 1em 1.5em; text-decoration: none;\" href=\"http://example.com/recover/reset?token={{.VerificationToken}}\">Reset My Password</a></center><br><br>If you did not initiate this request please disregard this email.<br><br>Thank you!<br>The Mojito Team",
+		BodyText: "You recently requested to recover your Mojito account.\n\nTo recover your account please click the following link:\n{{.ClientHost}}/recover/reset?token={{.VerificationToken}}}\n\nIf you did not initiate this request please disregard this email.\n\nThank you!\nThe Mojito Team",
+		BodyHTML: "You recently requested to recover your Mojito account.<br><br><br><center><a style=\"border-radius: 5px; background-color: #007bff; color: white; padding: 1em 1.5em; text-decoration: none;\" href=\"{{.ClientHost}}/recover/reset?token={{.VerificationToken}}\">Reset My Password</a></center><br><br>If you did not initiate this request please disregard this email.<br><br>Thank you!<br>The Mojito Team",
 	},
 }

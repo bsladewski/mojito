@@ -80,7 +80,8 @@ func signup(c *gin.Context) {
 		return
 	}
 
-	// check if a user account with the same email address already exists
+	// check if a verified user account with the same email address already
+	// exists
 	u, err := user.GetUserByEmail(c, req.Email)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		logrus.Error(err)
@@ -88,28 +89,33 @@ func signup(c *gin.Context) {
 			ErrorMessage: httperror.InternalServerError,
 		})
 		return
-	} else if u != nil {
+	} else if u != nil && u.Verified {
 		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
 			ErrorMessage: "email address is already registered",
 		})
 		return
 	}
 
-	// generate user secret key
-	secretKey := md5.Sum(uuid.NewV4().Bytes())
+	// if no unverified user account exists, create a new user account
+	if u == nil {
 
-	u = &user.User{
-		Email:     req.Email,
-		SecretKey: fmt.Sprintf("%x", secretKey),
-	}
+		// generate user secret key
+		secretKey := md5.Sum(uuid.NewV4().Bytes())
 
-	// create the user account record
-	if err := user.SaveUser(c, u); err != nil {
-		logrus.Error(err)
-		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
-			ErrorMessage: httperror.InternalServerError,
-		})
-		return
+		u = &user.User{
+			Email:     req.Email,
+			SecretKey: fmt.Sprintf("%x", secretKey),
+		}
+
+		// create the user account record
+		if err := user.SaveUser(c, u); err != nil {
+			logrus.Error(err)
+			c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
+				ErrorMessage: httperror.InternalServerError,
+			})
+			return
+		}
+
 	}
 
 	// set user password
@@ -146,14 +152,19 @@ func signup(c *gin.Context) {
 	// send the verification email
 	if err := email.SendEmailTemplate(
 		email.DefaultFromAddress(),
+		email.DefaultReplyToAddress(),
 		[]string{u.Email},
 		nil,
 		nil,
 		email.TemplateTitleSignup,
-		signupEmailData{VerificationToken: token},
+		signupEmailData{
+			ClientHost:        server.ClientHost(),
+			VerificationToken: token,
+		},
 	); err != nil {
+		logrus.Error(err)
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
-			ErrorMessage: err.Error(),
+			ErrorMessage: "failed to send verification email, please try again later",
 		})
 	}
 
@@ -250,14 +261,18 @@ func recover(c *gin.Context) {
 	// send the verification email
 	if err := email.SendEmailTemplate(
 		email.DefaultFromAddress(),
+		email.DefaultReplyToAddress(),
 		[]string{u.Email},
 		nil,
 		nil,
 		email.TemplateTitleRecover,
-		recoverEmailData{VerificationToken: token},
+		recoverEmailData{
+			ClientHost:        server.ClientHost(),
+			VerificationToken: token,
+		},
 	); err != nil {
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
-			ErrorMessage: err.Error(),
+			ErrorMessage: "failed to send verification email, please try again later",
 		})
 	}
 
