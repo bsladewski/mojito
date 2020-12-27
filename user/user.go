@@ -1,16 +1,15 @@
-package auth
+package user
 
 import (
 	"context"
 	"time"
 
 	"github.com/bsladewski/mojito/env"
-	"github.com/bsladewski/mojito/user"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/twinj/uuid"
 )
 
-// init configures the auth package. This function reads an access and refresh
+// init configures the user package. This function reads an access and refresh
 // key from the environment for JWT signing, if these keys are not found the
 // application will log a fatal error.
 func init() {
@@ -61,7 +60,7 @@ var accessExpirationHours time.Duration
 var refreshExpirationHours time.Duration
 
 // CreateAuth generates JWT access and refresh tokens for the supplied user.
-func CreateAuth(ctx context.Context, u *user.User) (accessToken,
+func CreateAuth(ctx context.Context, u *User) (accessToken,
 	refreshToken string, err error) {
 
 	// generate UUID to track issued credentials in peristent storage

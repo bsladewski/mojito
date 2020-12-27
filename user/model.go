@@ -12,6 +12,7 @@ import (
 func init() {
 	data.DB().AutoMigrate(
 		User{},
+		Login{},
 	)
 
 	// check if we should use mock data
@@ -43,6 +44,19 @@ type User struct {
 	Verified  bool   `json:"verified"`
 
 	LoggedOutAt time.Time `json:"logged_out_at"`
+}
+
+// Login stores identifiers for validating user auth tokens.
+type Login struct {
+	ID        uint           `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+
+	UserID uint   `gorm:"index" json:"user_id"`
+	UUID   string `gorm:"index" json:"uuid"`
+
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 /* Mock Data */

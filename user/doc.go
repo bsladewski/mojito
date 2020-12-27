@@ -1,4 +1,5 @@
-// Package auth provides functionality for managing user authentication.
+// Package user provides functionality for managing user account and user
+// authentication.
 //
 // Environment:
 //     MOJITO_ACCESS_KEY:
@@ -9,4 +10,4 @@
 //         int - the number of hours before an access token is expired
 //     MOJITO_REFRESH_EXPIRATION_HOURS:
 //         int - the number of hours before a refresh token is expired
-package auth
+package user

@@ -1,4 +1,4 @@
-package auth
+package user
 
 import (
 	"errors"
@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/bsladewski/mojito/httperror"
-	"github.com/bsladewski/mojito/user"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -54,14 +53,14 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 }
 
 // JWTGetUser extracts a user record from the request access token.
-func JWTGetUser(c *gin.Context) (*user.User, error) {
+func JWTGetUser(c *gin.Context) (*User, error) {
 
 	metadata, err := jwtGetAccessMetadata(c)
 	if err != nil {
 		return nil, err
 	}
 
-	return user.GetUserByID(c, metadata.userID)
+	return GetUserByID(c, metadata.userID)
 
 }
 
@@ -109,7 +108,7 @@ func jwtAccessTokenValid(c *gin.Context) error {
 		return err
 	}
 
-	u, err := user.GetUserByID(c, metadata.userID)
+	u, err := GetUserByID(c, metadata.userID)
 	if err != nil {
 		return err
 	}
