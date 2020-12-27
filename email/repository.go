@@ -3,15 +3,16 @@ package email
 import (
 	"encoding/json"
 
-	"github.com/bsladewski/mojito/data"
+	"gorm.io/gorm"
 )
 
 // getEmailTemplateByTitle retrieves an email template record by its title.
-func getEmailTemplateByTitle(templateTitle TemplateTitle) (*emailTemplate, error) {
+func getEmailTemplateByTitle(db *gorm.DB,
+	templateTitle TemplateTitle) (*emailTemplate, error) {
 
 	var item emailTemplate
 
-	if err := data.DB().Model(&emailTemplate{}).
+	if err := db.Model(&emailTemplate{}).
 		Where("title = ?", templateTitle).
 		First(&item).Error; err != nil {
 		return nil, err
@@ -22,8 +23,8 @@ func getEmailTemplateByTitle(templateTitle TemplateTitle) (*emailTemplate, error
 }
 
 // createEmailLog stores a new email log record.
-func createEmailLog(sendingMethod string, originalEmailID uint, to, cc,
-	bcc []string, subject, bodyText, bodyHTML string, err error) error {
+func createEmailLog(db *gorm.DB, sendingMethod string, originalEmailID uint,
+	to, cc, bcc []string, subject, bodyText, bodyHTML string, err error) error {
 
 	dataValues := struct {
 		ToList   []string `json:"to_list,omitempty"`
@@ -51,7 +52,7 @@ func createEmailLog(sendingMethod string, originalEmailID uint, to, cc,
 		errStr = err.Error()
 	}
 
-	if err := data.DB().Save(&emailLog{
+	if err := db.Save(&emailLog{
 		Method:          sendingMethod,
 		OriginalEmailID: originalEmailID,
 		Data:            string(dataBytes),

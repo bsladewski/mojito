@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ses"
+	"github.com/bsladewski/mojito/data"
 	"github.com/bsladewski/mojito/env"
 	"github.com/sirupsen/logrus"
 
@@ -216,8 +217,8 @@ func SendEmailSMTP(
 	}
 
 	// log the result of sending the email
-	if err := createEmailLog(sendingMethod, 0, to, cc, bcc, subject, bodyText,
-		bodyHTML, err); err != nil {
+	if err := createEmailLog(data.DB(), sendingMethod, 0, to, cc, bcc, subject,
+		bodyText, bodyHTML, err); err != nil {
 		logrus.Error(err)
 	}
 
@@ -308,8 +309,8 @@ func SendEmailSES(
 	}
 
 	// log the result of sending the email
-	if err := createEmailLog(sendingMethod, 0, to, cc, bcc, subject, bodyText,
-		bodyHTML, err); err != nil {
+	if err := createEmailLog(data.DB(), sendingMethod, 0, to, cc, bcc, subject,
+		bodyText, bodyHTML, err); err != nil {
 		logrus.Error(err)
 	}
 

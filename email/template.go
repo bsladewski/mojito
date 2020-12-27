@@ -3,6 +3,8 @@ package email
 import (
 	"bytes"
 	"text/template"
+
+	"github.com/bsladewski/mojito/data"
 )
 
 // TemplateTitle defines a unique title for retrieving an email template.
@@ -29,17 +31,17 @@ type SignupData struct {
 // ExecuteTemplate loads and executes the specified template with the supplied
 // data.
 func ExecuteTemplate(templateTitle TemplateTitle,
-	data interface{}) (subject, bodyText, bodyHTML string, err error) {
+	templateData interface{}) (subject, bodyText, bodyHTML string, err error) {
 
 	// load the template by title
-	tpl, err := getEmailTemplateByTitle(templateTitle)
+	tpl, err := getEmailTemplateByTitle(data.DB(), templateTitle)
 	if err != nil {
 		return "", "", "", err
 	}
 
 	// execute the subject
 	if tpl.Subject != "" {
-		subject, err = executeTemplate(tpl.Subject, data)
+		subject, err = executeTemplate(tpl.Subject, templateData)
 		if err != nil {
 			return "", "", "", err
 		}
@@ -47,7 +49,7 @@ func ExecuteTemplate(templateTitle TemplateTitle,
 
 	// execute the text body
 	if tpl.BodyText != "" {
-		bodyText, err = executeTemplate(tpl.BodyText, data)
+		bodyText, err = executeTemplate(tpl.BodyText, templateData)
 		if err != nil {
 			return "", "", "", err
 		}
@@ -55,7 +57,7 @@ func ExecuteTemplate(templateTitle TemplateTitle,
 
 	// execute the html body
 	if tpl.BodyHTML != "" {
-		bodyHTML, err = executeTemplate(tpl.BodyHTML, data)
+		bodyHTML, err = executeTemplate(tpl.BodyHTML, templateData)
 		if err != nil {
 			return "", "", "", err
 		}
@@ -65,7 +67,7 @@ func ExecuteTemplate(templateTitle TemplateTitle,
 }
 
 // executeTemplate executes the supplied template string with the supplied data.
-func executeTemplate(tpl string, data interface{}) (string, error) {
+func executeTemplate(tpl string, templateData interface{}) (string, error) {
 
 	t := template.New("template")
 
@@ -75,7 +77,7 @@ func executeTemplate(tpl string, data interface{}) (string, error) {
 	}
 
 	var content bytes.Buffer
-	if err := t.Execute(&content, data); err != nil {
+	if err := t.Execute(&content, templateData); err != nil {
 		return "", err
 	}
 

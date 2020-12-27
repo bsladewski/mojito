@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/bsladewski/mojito/data"
 	"github.com/bsladewski/mojito/env"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/twinj/uuid"
@@ -95,7 +96,7 @@ func CreateAuth(ctx context.Context, u *User) (accessToken,
 	}
 
 	// add the user auth record
-	if err := SaveLogin(ctx, &Login{
+	if err := SaveLogin(ctx, data.DB(), &Login{
 		UserID:    u.ID,
 		UUID:      authUUID,
 		ExpiresAt: refreshExpiration,

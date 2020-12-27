@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bsladewski/mojito/data"
 	"github.com/bsladewski/mojito/email"
 	"github.com/bsladewski/mojito/httperror"
 	"github.com/bsladewski/mojito/server"
@@ -100,7 +101,7 @@ func signup(c *gin.Context) {
 
 	// check if a verified user account with the same email address already
 	// exists
-	u, err := user.GetUserByEmail(c, req.Email)
+	u, err := user.GetUserByEmail(c, data.DB(), req.Email)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		logrus.Error(err)
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
@@ -114,6 +115,9 @@ func signup(c *gin.Context) {
 		return
 	}
 
+	// create a new transaction for creating the user account
+	tx := data.DB().Begin()
+
 	// if no unverified user account exists, create a new user account
 	if u == nil {
 
@@ -126,8 +130,9 @@ func signup(c *gin.Context) {
 		}
 
 		// create the user account record
-		if err := user.SaveUser(c, u); err != nil {
+		if err := user.SaveUser(c, tx, u); err != nil {
 			logrus.Error(err)
+			tx.Rollback()
 			c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
 				ErrorMessage: httperror.InternalServerError,
 			})
@@ -141,6 +146,7 @@ func signup(c *gin.Context) {
 		[]byte(fmt.Sprintf("%d:%s", u.ID, req.Password)), bcrypt.DefaultCost)
 	if err != nil {
 		logrus.Error(err)
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
 			ErrorMessage: httperror.InternalServerError,
 		})
@@ -149,8 +155,9 @@ func signup(c *gin.Context) {
 
 	u.Password = string(hash)
 
-	if err := user.SaveUser(c, u); err != nil {
+	if err := user.SaveUser(c, tx, u); err != nil {
 		logrus.Error(err)
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
 			ErrorMessage: httperror.InternalServerError,
 		})
@@ -161,6 +168,7 @@ func signup(c *gin.Context) {
 	token, err := user.GenerateSecretToken(c, u, u.Email)
 	if err != nil {
 		logrus.Error(err)
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
 			ErrorMessage: httperror.InternalServerError,
 		})
@@ -181,9 +189,20 @@ func signup(c *gin.Context) {
 		},
 	); err != nil {
 		logrus.Error(err)
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
 			ErrorMessage: "failed to send verification email, please try again later",
 		})
+		return
+	}
+
+	// commit the transaction
+	if err := tx.Commit().Error; err != nil {
+		logrus.Error(err)
+		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
+			ErrorMessage: "failed to create user account, please try again later",
+		})
+		return
 	}
 
 }
@@ -224,7 +243,7 @@ func signupVerify(c *gin.Context) {
 	u.Verified = true
 
 	// save user record
-	if err := user.SaveUser(c, u); err != nil {
+	if err := user.SaveUser(c, data.DB(), u); err != nil {
 		logrus.WithError(err)
 		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
 			ErrorMessage: invalidToken,
@@ -267,7 +286,7 @@ func login(c *gin.Context) {
 	}
 
 	// retrieve user account by email address
-	u, err := user.GetUserByEmail(c, req.Email)
+	u, err := user.GetUserByEmail(c, data.DB(), req.Email)
 	if err == gorm.ErrRecordNotFound {
 		logrus.Warn(err)
 		c.JSON(http.StatusUnauthorized, httperror.ErrorResponse{
@@ -313,7 +332,7 @@ func login(c *gin.Context) {
 
 	// delete expired user login records to keep persistent storage clean
 	go func() {
-		if err := user.DeleteExpiredLogin(c, u.ID); err != nil {
+		if err := user.DeleteExpiredLogin(c, data.DB(), u.ID); err != nil {
 			logrus.Error(err)
 		}
 	}()
@@ -359,7 +378,7 @@ func refresh(c *gin.Context) {
 	}
 
 	// retrieve user record
-	u, err := user.GetUserByID(c, login.UserID)
+	u, err := user.GetUserByID(c, data.DB(), login.UserID)
 	if err != nil {
 		logrus.Error(err)
 		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
@@ -379,7 +398,7 @@ func refresh(c *gin.Context) {
 	}
 
 	// delete original refresh token
-	if err := user.DeleteLogin(c, login); err != nil {
+	if err := user.DeleteLogin(c, data.DB(), login); err != nil {
 		logrus.Error(err)
 	}
 
@@ -415,7 +434,7 @@ func logout(c *gin.Context) {
 	}
 
 	// delete user auth record, this will invalidate the refresh token
-	if err := user.DeleteLogin(c, login); err != nil {
+	if err := user.DeleteLogin(c, data.DB(), login); err != nil {
 		logrus.Error(err)
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
 			ErrorMessage: logoutFailedGeneric,
@@ -428,7 +447,7 @@ func logout(c *gin.Context) {
 	u.LoggedOutAt = time.Now()
 
 	// update the user record
-	if err := user.SaveUser(c, u); err != nil {
+	if err := user.SaveUser(c, data.DB(), u); err != nil {
 		logrus.Error(err)
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
 			ErrorMessage: logoutFailedGeneric,
@@ -456,7 +475,7 @@ func recover(c *gin.Context) {
 	}
 
 	// retrieve user account by email address
-	u, err := user.GetUserByEmail(c, req.Email)
+	u, err := user.GetUserByEmail(c, data.DB(), req.Email)
 	if err == gorm.ErrRecordNotFound {
 		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
 			ErrorMessage: "email address not found",
@@ -545,7 +564,7 @@ func recoverReset(c *gin.Context) {
 
 	u.Password = string(hash)
 
-	if err := user.SaveUser(c, u); err != nil {
+	if err := user.SaveUser(c, data.DB(), u); err != nil {
 		logrus.Error(err)
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
 			ErrorMessage: httperror.InternalServerError,
@@ -629,7 +648,7 @@ func reset(c *gin.Context) {
 
 	u.Password = string(hash)
 
-	if err := user.SaveUser(c, u); err != nil {
+	if err := user.SaveUser(c, data.DB(), u); err != nil {
 		logrus.Error(err)
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
 			ErrorMessage: httperror.InternalServerError,
