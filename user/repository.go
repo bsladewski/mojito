@@ -7,6 +7,10 @@ import (
 	"gorm.io/gorm"
 )
 
+////////////////////////////////////////////////////////////////////////////////
+// User                                                                       //
+////////////////////////////////////////////////////////////////////////////////
+
 // GetUserByID retrieves a user record by id.
 func GetUserByID(ctx context.Context, db *gorm.DB, id uint) (*User, error) {
 
@@ -47,6 +51,10 @@ func SaveUser(ctx context.Context, db *gorm.DB, item *User) error {
 func DeleteUser(ctx context.Context, db *gorm.DB, item *User) error {
 	return db.Delete(item).Error
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Login                                                                      //
+////////////////////////////////////////////////////////////////////////////////
 
 // GetLoginByID retrieves a user login record by id.
 func GetLoginByID(ctx context.Context, db *gorm.DB,
@@ -114,4 +122,208 @@ func DeleteExpiredLogin(ctx context.Context, db *gorm.DB, userID uint) error {
 		Where("user_id = ?", userID).
 		Where("expires_at < ?", time.Now()).
 		Delete(&Login{}).Error
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Role                                                                       //
+////////////////////////////////////////////////////////////////////////////////
+
+// GetRoleByID retrieves a role by id.
+func GetRoleByID(ctx context.Context, db *gorm.DB, id uint) (*Role, error) {
+
+	var item Role
+
+	if err := db.Model(&Role{}).
+		Where("id = ?", id).
+		First(&item).Error; err != nil {
+		return nil, err
+	}
+
+	return &item, nil
+
+}
+
+// GetRoleByKey retrieves a role by its key.
+func GetRoleByKey(ctx context.Context, db *gorm.DB, key string) (*Role, error) {
+
+	var item Role
+
+	if err := db.Model(&Role{}).
+		Where("key = ?", key).
+		First(&item).Error; err != nil {
+		return nil, err
+	}
+
+	return &item, nil
+
+}
+
+// ListRole retrieves all defined roles.
+func ListRole(ctx context.Context, db *gorm.DB) ([]*Role, error) {
+
+	var items []*Role
+
+	if err := db.Model(&Role{}).
+		Find(&items).Error; err != nil {
+		return nil, err
+	}
+
+	return items, nil
+
+}
+
+// ListRoleByUser retrieves all roles associated with the specified user.
+func ListRoleByUser(ctx context.Context, db *gorm.DB,
+	userID uint) ([]*Role, error) {
+
+	var items []*userRole
+
+	if err := db.Model(&userRole{}).
+		Where("user_id = ?", userID).
+		Preload("Role").Find(&items).Error; err != nil {
+		return nil, err
+	}
+
+	var roles []*Role
+
+	for _, item := range items {
+		roles = append(roles, &item.Role)
+	}
+
+	return roles, nil
+
+}
+
+// SaveRole inserts or updates the supplied role record.
+func SaveRole(ctx context.Context, db *gorm.DB, item *Role) error {
+	return db.Save(item).Error
+}
+
+// DeleteRole deletes the supplied role record.
+func DeleteRole(ctx context.Context, db *gorm.DB, item *Role) error {
+	return db.Delete(item).Error
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Permission                                                                 //
+////////////////////////////////////////////////////////////////////////////////
+
+// GetPermissionByID retrieves a permission by id.
+func GetPermissionByID(ctx context.Context, db *gorm.DB,
+	id uint) (*Permission, error) {
+
+	var item Permission
+
+	if err := db.Model(&Permission{}).
+		Where("id = ?", id).
+		First(&item).Error; err != nil {
+		return nil, err
+	}
+
+	return &item, nil
+
+}
+
+// GetPermissionByKey retrieves a permission by its key.
+func GetPermissionByKey(ctx context.Context, db *gorm.DB,
+	key string) (*Permission, error) {
+
+	var item Permission
+
+	if err := db.Model(&Permission{}).
+		Where("key = ?", key).
+		First(&item).Error; err != nil {
+		return nil, err
+	}
+
+	return &item, nil
+
+}
+
+// ListPermission retrieves all defined permissions. May optionally be filtered
+// by whether the permission is public.
+func ListPermission(ctx context.Context, db *gorm.DB,
+	public *bool) ([]*Permission, error) {
+
+	var items []*Permission
+
+	q := db.Model(&Permission{})
+
+	if public != nil {
+		q = q.Where("public = ?", *public)
+	}
+
+	if err := q.Find(&items).Error; err != nil {
+		return nil, err
+	}
+
+	return items, nil
+
+}
+
+// ListPermissionByRole retrieves all permissions associated with the specified
+// role. May optionally be filtered by whether the permission is public.
+func ListPermissionByRole(ctx context.Context, db *gorm.DB,
+	roleID uint, public *bool) ([]*Permission, error) {
+
+	var items []*rolePermission
+
+	q := db.Model(&rolePermission{}).
+		Where("role_id = ?", roleID)
+
+	if public != nil {
+		q = q.Where("public = ?", *public)
+	}
+
+	if err := q.Preload("Permission").Find(&items).Error; err != nil {
+		return nil, err
+	}
+
+	var permissions []*Permission
+
+	for _, item := range items {
+		permissions = append(permissions, &item.Permission)
+	}
+
+	return permissions, nil
+
+}
+
+// ListPermissionByUser retrieves all permissions associated with the specified
+// user. May optionally be filtered by whether the permission is public.
+func ListPermissionByUser(ctx context.Context, db *gorm.DB,
+	userID uint, public *bool) ([]*Permission, error) {
+
+	var items []*userPermission
+
+	q := db.Model(&userPermission{}).
+		Where("user_id = ?", userID)
+
+	if public != nil {
+		q = q.Where("public = ?", *public)
+	}
+
+	if err := q.Preload("Permission").Find(&items).Error; err != nil {
+		return nil, err
+	}
+
+	var permissions []*Permission
+
+	for _, item := range items {
+		permissions = append(permissions, &item.Permission)
+	}
+
+	return permissions, nil
+
+}
+
+// SavePermission inserts or updates the supplied permission record.
+func SavePermission(ctx context.Context, db *gorm.DB, item *Permission) error {
+	return db.Save(item).Error
+}
+
+// DeletePermission deletes the supplied permission record.
+func DeletePermission(ctx context.Context, db *gorm.DB,
+	item *Permission) error {
+	return db.Delete(item).Error
 }

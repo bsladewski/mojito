@@ -13,6 +13,11 @@ func init() {
 	data.DB().AutoMigrate(
 		User{},
 		Login{},
+		Role{},
+		Permission{},
+		userRole{},
+		rolePermission{},
+		userPermission{},
 	)
 
 	// check if we should use mock data
@@ -40,23 +45,77 @@ type User struct {
 	Email    string `gorm:"index,unique" json:"email"`
 	Password string `json:"password"`
 
-	SecretKey string `json:"secret_key"`
-	Verified  bool   `json:"verified"`
+	Admin     bool   `json:"admin"`      // admins have the broadest set of user permissions
+	SecretKey string `json:"secret_key"` // used to sign tokens when generating links for this user
+	Verified  bool   `json:"verified"`   // whether the user has completed email verification
 
-	LoggedOutAt time.Time `json:"logged_out_at"`
+	LoggedOutAt time.Time `json:"logged_out_at"` // records the last time the user explicitly logged out
 }
 
 // Login stores identifiers for validating user auth tokens.
 type Login struct {
+	ID uint `gorm:"primarykey" json:"id"`
+
+	UserID uint   `gorm:"index" json:"user_id"`
+	UUID   string `gorm:"index" json:"uuid"` // uniquely identifies a refresh token
+
+	ExpiresAt time.Time `json:"expires_at"` // records when a refresh token will expire
+}
+
+// Role represents a predifined set of permissions that may be applied to a
+// user.
+type Role struct {
 	ID        uint           `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 
-	UserID uint   `gorm:"index" json:"user_id"`
-	UUID   string `gorm:"index" json:"uuid"`
+	Key         string `gorm:"index,unique" json:"key"` // text that uniquely identifies this role
+	Name        string `json:"name"`                    // a display name for this role
+	Description string `json:"description"`             // a brief description of this role
+}
 
-	ExpiresAt time.Time `json:"expires_at"`
+// userRole relates a user account to a role.
+type userRole struct {
+	ID uint `gorm:"primarykey" json:"id"`
+
+	UserID uint `json:"user_id"`
+	User   User `gorm:"constraint:OnDelete:CASCADE"`
+	RoleID uint `json:"role_id"`
+	Role   Role `gorm:"constraint:OnDelete:CASCADE"`
+}
+
+// Permission allows a user to access some feature of the application.
+type Permission struct {
+	ID        uint           `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+
+	Public      bool   `gorm:"index" json:"public"`     // public permissions are also used on the front-end
+	Key         string `gorm:"index,unique" json:"key"` // text that uniquely identifies this permission
+	Name        string `json:"name"`                    // a display name for this permission
+	Description string `json:"description"`             // a brief description of this permission
+}
+
+// rolePermission relates a role to a permission.
+type rolePermission struct {
+	ID uint `gorm:"primarykey" json:"id"`
+
+	RoleID       uint       `json:"role_id"`
+	Role         Role       `gorm:"constraint:OnDelete:CASCADE"`
+	PermissionID uint       `json:"permission_id"`
+	Permission   Permission `gorm:"constraint:OnDelete:CASCADE"`
+}
+
+// userPermission relates a user to a permission.
+type userPermission struct {
+	ID uint `gorm:"primarykey" json:"id"`
+
+	UserID       uint       `json:"user_id"`
+	User         User       `gorm:"constraint:OnDelete:CASCADE"`
+	PermissionID uint       `json:"permission_id"`
+	Permission   Permission `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 /* Mock Data */
@@ -65,9 +124,17 @@ type Login struct {
 var mockUsers = []User{
 	{
 		ID:        1,
+		Email:     "admin@mojitobot.com",
+		Password:  "$2a$10$38cznnVvOXAd4fFZH/M89efgJP3LB0p2NnyXystHkRlxrSeL2tkvS", // mojito
+		Admin:     true,
+		SecretKey: "8bf83c80-f235-461e-9bd7-00c83a5cfff8",
+		Verified:  true,
+	},
+	{
+		ID:        2,
 		Email:     "test@mojitobot.com",
 		Password:  "$2a$10$38cznnVvOXAd4fFZH/M89efgJP3LB0p2NnyXystHkRlxrSeL2tkvS", // mojito
-		SecretKey: "8bf83c80-f235-461e-9bd7-00c83a5cfff8",
+		SecretKey: "43ee0e83-dc81-4263-8bb0-6ccddff8586d",
 		Verified:  true,
 	},
 }
