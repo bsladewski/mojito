@@ -271,10 +271,6 @@ func ListPermissionByRole(ctx context.Context, db *gorm.DB,
 	q := db.Model(&rolePermission{}).
 		Where("role_id = ?", roleID)
 
-	if public != nil {
-		q = q.Where("public = ?", *public)
-	}
-
 	if err := q.Preload("Permission").Find(&items).Error; err != nil {
 		return nil, err
 	}
@@ -282,6 +278,9 @@ func ListPermissionByRole(ctx context.Context, db *gorm.DB,
 	var permissions []*Permission
 
 	for _, item := range items {
+		if public != nil && item.Permission.Public != *public {
+			continue
+		}
 		permissions = append(permissions, &item.Permission)
 	}
 
@@ -299,10 +298,6 @@ func ListPermissionByUser(ctx context.Context, db *gorm.DB,
 	q := db.Model(&userPermission{}).
 		Where("user_id = ?", userID)
 
-	if public != nil {
-		q = q.Where("public = ?", *public)
-	}
-
 	if err := q.Preload("Permission").Find(&items).Error; err != nil {
 		return nil, err
 	}
@@ -310,6 +305,9 @@ func ListPermissionByUser(ctx context.Context, db *gorm.DB,
 	var permissions []*Permission
 
 	for _, item := range items {
+		if public != nil && item.Permission.Public != *public {
+			continue
+		}
 		permissions = append(permissions, &item.Permission)
 	}
 

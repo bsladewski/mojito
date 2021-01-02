@@ -25,8 +25,9 @@ type loginRequest struct {
 
 // loginResponse is used to format responses from the login endpoint.
 type loginResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	AccessToken  string   `json:"access_token"`
+	RefreshToken string   `json:"refresh_token"`
+	Permissions  []string `json:"permissions"`
 }
 
 // refreshRequest is used to read a request to the refresh endpoint.
@@ -36,8 +37,9 @@ type refreshRequest struct {
 
 // refreshResponse is used to format responses from the refresh endpoint.
 type refreshResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	AccessToken  string   `json:"access_token"`
+	RefreshToken string   `json:"refresh_token"`
+	Permissions  []string `json:"permissions"`
 }
 
 // recoverRequest is used to read a request to the recover endpoint.

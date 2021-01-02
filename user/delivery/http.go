@@ -330,6 +330,22 @@ func login(c *gin.Context) {
 		return
 	}
 
+	var permissionKeys []string
+
+	// get public user permissions
+	permissions, err := user.GetUserPermissions(c, u, ptrToBool(true))
+	if err != nil {
+		logrus.Error(err)
+		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
+			ErrorMessage: httperror.InternalServerError,
+		})
+		return
+	}
+
+	for _, permission := range permissions {
+		permissionKeys = append(permissionKeys, permission.Key)
+	}
+
 	// delete expired user login records to keep persistent storage clean
 	go func() {
 		if err := user.DeleteExpiredLogin(c, data.DB(), u.ID); err != nil {
@@ -341,6 +357,7 @@ func login(c *gin.Context) {
 	c.JSON(http.StatusOK, loginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
+		Permissions:  permissionKeys,
 	})
 
 }
@@ -402,10 +419,27 @@ func refresh(c *gin.Context) {
 		logrus.Error(err)
 	}
 
+	var permissionKeys []string
+
+	// get public user permissions
+	permissions, err := user.GetUserPermissions(c, u, ptrToBool(true))
+	if err != nil {
+		logrus.Error(err)
+		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
+			ErrorMessage: httperror.InternalServerError,
+		})
+		return
+	}
+
+	for _, permission := range permissions {
+		permissionKeys = append(permissionKeys, permission.Key)
+	}
+
 	// repond with auth tokens
 	c.JSON(http.StatusOK, refreshResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
+		Permissions:  permissionKeys,
 	})
 
 }
@@ -659,4 +693,9 @@ func reset(c *gin.Context) {
 	// response with 200 - OK if password reset was successful
 	c.Status(http.StatusOK)
 
+}
+
+// ptrToBool gets a pointer to the supplied boolean value.
+func ptrToBool(val bool) *bool {
+	return &val
 }

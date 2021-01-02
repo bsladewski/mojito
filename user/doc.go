@@ -1,5 +1,5 @@
-// Package user provides functionality for managing user account and user
-// authentication.
+// Package user provides functionality for managing user accounts, permissions,
+// and authentication.
 //
 // Environment:
 //     MOJITO_ACCESS_KEY:
