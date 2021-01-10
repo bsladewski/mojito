@@ -184,7 +184,7 @@ func signup(c *gin.Context) {
 		nil,
 		email.TemplateTitleSignup,
 		signupEmailData{
-			ClientHost:        server.ClientHost(),
+			ClientBaseURL:     server.ClientBaseURL(),
 			VerificationToken: token,
 		},
 	); err != nil {
@@ -508,7 +508,7 @@ func recover(c *gin.Context) {
 		nil,
 		email.TemplateTitleRecover,
 		recoverEmailData{
-			ClientHost:        server.ClientHost(),
+			ClientBaseURL:     server.ClientBaseURL(),
 			VerificationToken: token,
 		},
 	); err != nil {

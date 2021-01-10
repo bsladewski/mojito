@@ -8,7 +8,7 @@ type signupRequest struct {
 
 // signupEmailData is used to format the email sent by the signup endpoint.
 type signupEmailData struct {
-	ClientHost        string
+	ClientBaseURL     string
 	VerificationToken string
 }
 
@@ -47,7 +47,7 @@ type recoverRequest struct {
 
 // recoverEmailData is used to format the email sent by the recover endpoint.
 type recoverEmailData struct {
-	ClientHost        string
+	ClientBaseURL     string
 	VerificationToken string
 }
 
