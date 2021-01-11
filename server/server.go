@@ -120,8 +120,8 @@ const (
 	// preflightMaxAgeVariable defines the environment variable for the max age
 	// of cached preflight reponse.
 	preflightMaxAgeVariable = "MOJITO_CORS_MAX_AGE"
-	// clientBaseURLVariable defines the environment variable for the host that is
-	// used to serve the application front-end.
+	// clientBaseURLVariable defines the environment variable for the host that
+	// is used to serve the application front-end.
 	clientBaseURLVariable = "MOJITO_CLIENT_BASE_URL"
 )
 
