@@ -8,7 +8,7 @@
 //     MOJITO_COINBASE_RECORD_PRICES
 //         bool - a flag that indicates whether we should record price data as
 //                candlesticks.
-//                Default: true
+//                Default: false
 //     MOJITO_COINBASE_RECORD_PRICES_INTERVAL
 //         int - determines how long in seconds we should aggregate price data
 //               before recording a candlestick.

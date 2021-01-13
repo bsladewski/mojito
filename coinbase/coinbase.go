@@ -20,7 +20,7 @@ func init() {
 	// retreive Coinbase configuration from environment
 	websocketFeedBaseURL = env.GetStringSafe(websocketFeedBaseURLVariable,
 		"wss://ws-feed.pro.coinbase.com")
-	recordPrices = env.GetBoolSafe(recordPricesVariable, true)
+	recordPrices = env.GetBoolSafe(recordPricesVariable, false)
 	recordPricesInterval = env.GetIntSafe(recordPricesIntervalVariable, 60)
 
 	// if we should record prices, spin up a process to listen for and aggregate
