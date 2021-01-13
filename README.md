@@ -1,5 +1,7 @@
 # Mojito
 
+![go workflow](https://github.com/bsladewski/mojito/workflows/Go/badge.svg)
+
 The API server for the Mojito web application. Mojito is a tool for analyzing
 cryptocurrency prices and configuring bots to automate or assist with trading
 strategies.
