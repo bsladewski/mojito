@@ -72,7 +72,8 @@ type priceData struct {
 	BestAsk   string    `json:"best_ask"`
 }
 
-// initializeRecordPrices .
+// initializeRecordPrices begins listening for price data and recording
+// candlesticks every time the price interval elapses.
 func initializeRecordPrices() error {
 
 	_, channel, err := WebsocketSubscribe(FeedTicker)
