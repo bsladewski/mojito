@@ -3,7 +3,7 @@ package candlestick
 import (
 	"time"
 
-	"github.com/bsladewski/mojito/data"
+	"mojito/data"
 )
 
 // init migrates the database model.

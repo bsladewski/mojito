@@ -5,7 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bsladewski/mojito/currency"
+	"mojito/currency"
+
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"github.com/twinj/uuid"

@@ -10,8 +10,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/bsladewski/mojito/data"
-	"github.com/bsladewski/mojito/env"
+	"mojito/data"
+	"mojito/env"
+
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/twinj/uuid"
 )

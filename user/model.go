@@ -3,7 +3,8 @@ package user
 import (
 	"time"
 
-	"github.com/bsladewski/mojito/data"
+	"mojito/data"
+
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )

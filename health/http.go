@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bsladewski/mojito/data"
-	"github.com/bsladewski/mojito/server"
+	"mojito/data"
+	"mojito/server"
+
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )

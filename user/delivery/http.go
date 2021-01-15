@@ -6,11 +6,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bsladewski/mojito/data"
-	"github.com/bsladewski/mojito/email"
-	"github.com/bsladewski/mojito/httperror"
-	"github.com/bsladewski/mojito/server"
-	"github.com/bsladewski/mojito/user"
+	"mojito/data"
+	"mojito/email"
+	"mojito/httperror"
+	"mojito/server"
+	"mojito/user"
+
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/twinj/uuid"

@@ -1,4 +1,4 @@
-module github.com/bsladewski/mojito
+module mojito
 
 go 1.13
 

@@ -1,6 +1,6 @@
 package delivery
 
-import "github.com/bsladewski/mojito/candlestick"
+import "mojito/candlestick"
 
 // listCandlestickResponse is used to format responses from the list
 // candlesticks endpoint.

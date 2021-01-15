@@ -8,8 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bsladewski/mojito/data"
-	"github.com/bsladewski/mojito/httperror"
+	"mojito/data"
+	"mojito/httperror"
+
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"

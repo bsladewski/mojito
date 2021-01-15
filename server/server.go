@@ -43,7 +43,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/bsladewski/mojito/env"
+	"mojito/env"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"

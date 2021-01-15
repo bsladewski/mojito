@@ -1,9 +1,6 @@
 # Start from golang base image
 FROM golang:alpine as builder
 
-# Server settings
-ENV MOJITO_PORT=8080
-
 # Add Maintainer info
 LABEL maintainer="Benjamin Sladewski <bsladewski@gmail.com>"
 

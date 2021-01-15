@@ -4,12 +4,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bsladewski/mojito/cache"
-	"github.com/bsladewski/mojito/candlestick"
-	"github.com/bsladewski/mojito/data"
-	"github.com/bsladewski/mojito/httperror"
-	"github.com/bsladewski/mojito/server"
-	"github.com/bsladewski/mojito/user"
+	"mojito/cache"
+	"mojito/candlestick"
+	"mojito/data"
+	"mojito/httperror"
+	"mojito/server"
+	"mojito/user"
+
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )

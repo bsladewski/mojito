@@ -8,9 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bsladewski/mojito/candlestick"
-	"github.com/bsladewski/mojito/data"
-	"github.com/bsladewski/mojito/env"
+	"mojito/candlestick"
+	"mojito/data"
+	"mojito/env"
+
 	"github.com/sirupsen/logrus"
 )
 

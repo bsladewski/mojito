@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"text/template"
 
-	"github.com/bsladewski/mojito/data"
+	"mojito/data"
 )
 
 // TemplateTitle defines a unique title for retrieving an email template.

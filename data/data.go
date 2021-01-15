@@ -13,7 +13,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bsladewski/mojito/env"
+	"mojito/env"
+
 	"github.com/sirupsen/logrus"
 
 	"gorm.io/driver/mysql"
