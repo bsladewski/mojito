@@ -144,6 +144,7 @@ func initializeRecordPrices() error {
 
 				// set the close price and save the ticker to the database
 				candlesticks[ticker] = candlesticks[ticker].SetClose(currentPrice)
+				logrus.Debugf("new candlestick: %v", candlesticks[ticker])
 				if err := candlestick.Save(context.Background(), data.DB(),
 					candlesticks[ticker]); err != nil {
 					logrus.Error(err)

@@ -27,6 +27,7 @@ func LocalCacheMiddleware(ttl time.Duration) gin.HandlerFunc {
 		if item, ok := GetLocal(key); ok {
 			if resp, ok := item.(responseCacheItem); ok {
 				c.Data(http.StatusOK, resp.ContentType, resp.Data)
+				c.Abort()
 				return
 			}
 		}

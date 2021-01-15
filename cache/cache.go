@@ -2,6 +2,7 @@ package cache
 
 import (
 	"container/heap"
+	"fmt"
 	"sync"
 	"time"
 
@@ -28,6 +29,11 @@ type cacheEntry struct {
 	item    interface{}
 }
 
+// String returns a string representation of this cache entry.
+func (c cacheEntry) String() string {
+	return fmt.Sprintf("Key: %s Expires: %v Item: %v", c.key, c.expires, c.item)
+}
+
 // SetLocal adds an item to the local cache.
 func SetLocal(key string, item interface{}, ttl time.Duration) {
 
@@ -46,12 +52,16 @@ func SetLocal(key string, item interface{}, ttl time.Duration) {
 		return
 	}
 
-	// add the item to the cache
-	heap.Push(localCache.heap, &cacheEntry{
+	entry := &cacheEntry{
 		key:     key,
 		expires: time.Now().Add(ttl),
 		item:    item,
-	})
+	}
+
+	// add the item to the cache
+	logrus.Debugf("new cache entry: %v", *entry)
+	localCache.entries[key] = entry
+	heap.Push(localCache.heap, entry)
 
 }
 
@@ -69,6 +79,7 @@ func GetLocal(key string) (interface{}, bool) {
 
 	// check if the item is present in the cache
 	if entry, ok := localCache.entries[key]; ok {
+		logrus.Debugf("get cache entry: %v", *entry)
 		return entry.item, true
 	}
 
@@ -80,6 +91,8 @@ func removeStaleLocal() {
 	for {
 		entry, ok := localCache.heap.Peek().(*cacheEntry)
 		if ok && entry.expires.Before(time.Now()) {
+			logrus.Debugf("remove cache entry: %v", *entry)
+			delete(localCache.entries, entry.key)
 			localCache.heap.Pop()
 			continue
 		}

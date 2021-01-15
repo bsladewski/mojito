@@ -9,11 +9,15 @@ import (
 	"mojito/env"
 	"mojito/server"
 
-	"github.com/sirupsen/logrus"
-
+	// import APIs
 	_ "mojito/candlestick/delivery"
 	_ "mojito/health"
 	_ "mojito/user/delivery"
+
+	// import data feeds
+	_ "mojito/coinbase"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (

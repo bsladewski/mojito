@@ -19,7 +19,7 @@ import (
 func init() {
 
 	// bind private endpoints
-	server.Router().POST(listCandlestickEndpoint, user.JWTAuthMiddleware(),
+	server.Router().GET(listCandlestickEndpoint, user.JWTAuthMiddleware(),
 		cache.LocalCacheMiddleware(60*time.Second), listCandlestick)
 
 }
