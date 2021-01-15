@@ -116,6 +116,7 @@ func initializeRecordPrices() error {
 			if _, ok := candlesticks[ticker]; !ok {
 				candlesticks[ticker] = candlestick.Candlestick{
 					CreatedAt: intervalStart,
+					Exchange:  candlestick.ExchangeCoinbase,
 					Ticker:    ticker,
 				}
 			}

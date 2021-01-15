@@ -2,6 +2,16 @@ package candlestick
 
 import "fmt"
 
+const (
+	// ExchangeCoinbase represents data related to the Coinbase exchange.
+	ExchangeCoinbase = "coinbase"
+)
+
+const (
+	// TickerBTC represents data related to the bitcoin cryptocurrency.
+	TickerBTC = "BTC"
+)
+
 // SetOpen sets the open price to the supplied value, result is returned as a
 // new candlestick.
 func (c Candlestick) SetOpen(open float64) Candlestick {
@@ -131,6 +141,8 @@ func (c Candlestick) DivideCandlestick(other Candlestick) Candlestick {
 
 // String returns a string representation of this candlestick.
 func (c Candlestick) String() string {
-	return fmt.Sprintf("%s t: %v, o: %.2f, c: %.2f, h: %.2f l: %.2f v: %d",
-		c.Ticker, c.CreatedAt, c.Open, c.Close, c.High, c.Low, c.Volume)
+	return fmt.Sprintf(
+		"Exchange: %s Ticker: %s Created At: %v, Open: %.2f, Close: %.2f, High: %.2f Low: %.2f Volume: %d",
+		c.Exchange, c.Ticker, c.CreatedAt, c.Open, c.Close, c.High, c.Low,
+		c.Volume)
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/bsladewski/mojito/server"
 	"github.com/sirupsen/logrus"
 
+	_ "github.com/bsladewski/mojito/candlestick/delivery"
 	_ "github.com/bsladewski/mojito/health"
 	_ "github.com/bsladewski/mojito/user/delivery"
 )
