@@ -153,6 +153,9 @@ func initializeRecordPrices() error {
 				delete(candlesticks, ticker)
 				intervalStart = intervalStart.Add(
 					time.Duration(recordPricesInterval) * time.Second)
+				if intervalStart.Before(time.Now()) {
+					intervalStart = time.Now()
+				}
 			}
 
 		}

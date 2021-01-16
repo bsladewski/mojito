@@ -23,6 +23,7 @@ type websocketClient struct {
 // websocketFeed listens for messages from a Coinbase websocket feed.
 type websocketFeed struct {
 	mutex       *sync.Mutex
+	close       bool
 	subscribers map[string]chan []byte
 	conn        *websocket.Conn
 }
@@ -99,6 +100,10 @@ func WebsocketSubscribe(targetFeed Feed) (string, chan []byte, error) {
 
 			for {
 
+				if feed.close {
+					break
+				}
+
 				// read a message from the feed
 				_, message, err := conn.ReadMessage()
 				if err != nil {
@@ -108,6 +113,9 @@ func WebsocketSubscribe(targetFeed Feed) (string, chan []byte, error) {
 						// re-establish the websocket connection
 						feed.conn.Close()
 						time.Sleep(time.Minute)
+						if feed.close {
+							break
+						}
 
 						feed.conn, _, err = websocket.DefaultDialer.Dial(
 							websocketFeedBaseURL, nil)
@@ -162,8 +170,14 @@ func WebsocketUnsubscribe(id string) {
 		return
 	}
 
+	client.mutex.Lock()
+	defer client.mutex.Unlock()
+
+	// keep track of empty feeds so we can delete them after unsubscribing
+	feedsToDelete := []Feed{}
+
 	// check each feed for the subscriber
-	for _, feed := range client.feeds {
+	for feedName, feed := range client.feeds {
 
 		feed.mutex.Lock()
 
@@ -174,7 +188,24 @@ func WebsocketUnsubscribe(id string) {
 			delete(feed.subscribers, id)
 		}
 
+		if len(feed.subscribers) == 0 {
+			feedsToDelete = append(feedsToDelete, feedName)
+		}
+
 		feed.mutex.Unlock()
+
+	}
+
+	// delete empty feeds
+	for _, feedName := range feedsToDelete {
+
+		// mark that the feed should be closed close
+		client.feeds[feedName].mutex.Lock()
+		client.feeds[feedName].close = true
+		client.feeds[feedName].mutex.Unlock()
+
+		// remove the feed from the client
+		delete(client.feeds, feedName)
 
 	}
 
