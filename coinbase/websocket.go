@@ -102,9 +102,22 @@ func WebsocketSubscribe(targetFeed Feed) (string, chan []byte, error) {
 				// read a message from the feed
 				_, message, err := conn.ReadMessage()
 				if err != nil {
-					// if we run into an error log it and wait one minute
 					logrus.Error(err)
-					time.Sleep(time.Second)
+
+					for {
+						// re-establish the websocket connection
+						feed.conn.Close()
+						time.Sleep(time.Minute)
+
+						feed.conn, _, err = websocket.DefaultDialer.Dial(
+							websocketFeedBaseURL, nil)
+						if err != nil {
+							logrus.Error(err)
+						} else {
+							break
+						}
+					}
+
 					continue
 				}
 
