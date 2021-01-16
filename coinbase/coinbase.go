@@ -103,7 +103,7 @@ func initializeRecordPrices() error {
 			}
 
 			// get the ticker from the price data
-			ticker := strings.Split(price.ProductID, "-")[0]
+			ticker := strings.ToUpper(strings.Split(price.ProductID, "-")[0])
 
 			// parse price from price data
 			currentPrice, err := strconv.ParseFloat(price.Price, 64)

@@ -2,6 +2,7 @@ package candlestick
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -22,6 +23,57 @@ func ListByTicker(ctx context.Context, db *gorm.DB, exchange, ticker string,
 	}
 
 	return items, nil
+
+}
+
+// ListExchanges retrieves all exchanges for which candlestick data exists.
+func ListExchanges(ctx context.Context, db *gorm.DB) ([]string, error) {
+
+	var exchanges []string
+
+	rows, err := db.Raw("SELECT DISTINCT exchange FROM candlesticks").Rows()
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var exchange sql.NullString
+
+		if err := rows.Scan(&exchange); err != nil {
+			return nil, err
+		}
+
+		exchanges = append(exchanges, exchange.String)
+	}
+
+	return exchanges, nil
+
+}
+
+// ListTickers retrieves all tickers for which candlestick data exists.
+func ListTickers(ctx context.Context, db *gorm.DB,
+	exchange string) ([]string, error) {
+
+	var tickers []string
+
+	rows, err := db.Raw(
+		"SELECT DISTINCT ticker FROM candlesticks WHERE exchange = ?",
+		exchange).Rows()
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var ticker sql.NullString
+
+		if err := rows.Scan(&ticker); err != nil {
+			return nil, err
+		}
+
+		tickers = append(tickers, ticker.String)
+	}
+
+	return tickers, nil
 
 }
 
