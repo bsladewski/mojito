@@ -96,9 +96,8 @@ func listCandlestick(c *gin.Context) {
 	exchange := strings.ToUpper(c.Param("exchange"))
 	ticker := strings.ToUpper(c.Param("ticker"))
 
-	// TODO: add options for applying functions to candlestick data
-
-	// TODO: add a way to specify date range and sample size
+	// TODO: add a way to specify date range and sample size, right now we're
+	// just looking at all candlesticks over the past 24 hours
 
 	// retrieve candlestick data
 	candlesticks, err := candlestick.ListByTicker(c, data.DB(), exchange,
@@ -112,10 +111,5 @@ func listCandlestick(c *gin.Context) {
 	}
 
 	// respond with candlesticks
-	c.JSON(http.StatusOK, []listCandlestickResponse{
-		{
-			Function:     "List",
-			Candlesticks: candlesticks,
-		},
-	})
+	c.JSON(http.StatusOK, candlesticks)
 }
