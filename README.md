@@ -8,6 +8,8 @@ The API server for the Mojito web application. Mojito is a tool for analyzing
 cryptocurrency prices and configuring bots to automate or assist with trading
 strategies.
 
+The front-end can be found in the [Mojito Client](https://github.com/bsladewski/mojito-client) repository.
+
 ## Dependencies
 
 This project uses the [Go programming language](https://golang.org/dl/).
