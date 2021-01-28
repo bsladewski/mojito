@@ -8,17 +8,43 @@ import (
 	"gorm.io/gorm"
 )
 
-// ListByTicker retrieves all candlestick records associated with the specified
-// ticker and between the specified start and end date.
-func ListByTicker(ctx context.Context, db *gorm.DB, exchange, ticker string,
-	startDate, endDate time.Time) ([]Candlestick, error) {
+// GetLastByTicker retrieves the most recently added candlestick for the
+// specified exchange and ticker.
+func GetLastByTicker(ctx context.Context, db *gorm.DB, exchange,
+	ticker string) (Candlestick, error) {
 
-	var items []Candlestick
+	var item Candlestick
 
 	if err := db.Model(&Candlestick{}).
 		Where("exchange = ? AND ticker = ?", exchange, ticker).
-		Where("created_at > ? AND created_at < ?", startDate, endDate).
-		Find(&items).Error; err != nil {
+		Last(&item).Error; err != nil {
+		return Candlestick{}, err
+	}
+
+	return item, nil
+
+}
+
+// ListByTicker retrieves all candlestick records associated with the specified
+// ticker and between the specified start and end date.
+func ListByTicker(ctx context.Context, db *gorm.DB, exchange, ticker string,
+	hourly, daily bool, startDate, endDate time.Time) ([]Candlestick, error) {
+
+	var items []Candlestick
+
+	res := db.Model(&Candlestick{}).
+		Where("exchange = ? AND ticker = ?", exchange, ticker).
+		Where("created_at > ? AND created_at < ?", startDate, endDate)
+
+	if hourly {
+		res = res.Where("opens_hour")
+	}
+
+	if daily {
+		res = res.Where("opens_day")
+	}
+
+	if err := res.Find(&items).Error; err != nil {
 		return nil, err
 	}
 

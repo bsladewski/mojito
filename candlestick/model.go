@@ -20,6 +20,9 @@ type Candlestick struct {
 	ID        uint      `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time `gorm:"index" json:"created_at"`
 
+	OpensDay  bool `gorm:"index" json:"opens_day"`
+	OpensHour bool `gorm:"index" json:"opens_hour"`
+
 	Exchange string  `gorm:"index" json:"exchange"`
 	Ticker   string  `gorm:"index" json:"ticker"`
 	Open     float64 `json:"open"`

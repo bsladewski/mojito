@@ -76,6 +76,18 @@ func (c Candlestick) SetVolume(volume int) Candlestick {
 	return c
 }
 
+// SetOpensHour sets whether this candlestick opens a new hour.
+func (c Candlestick) SetOpensHour(opensHour bool) Candlestick {
+	c.OpensHour = opensHour
+	return c
+}
+
+// SetOpensDay sets whether this candlestick opens a new day.
+func (c Candlestick) SetOpensDay(opensDay bool) Candlestick {
+	c.OpensDay = opensDay
+	return c
+}
+
 // Add adds the supplied values to this candlestick, result is returned as a new
 // candlestick.
 func (c Candlestick) Add(open, close, high, low float64,

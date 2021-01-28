@@ -13,6 +13,7 @@ import (
 	"mojito/env"
 
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // init loads the configuration for connecting to the Coinbase API.
@@ -84,8 +85,6 @@ func initializeRecordPrices() error {
 
 	go func() {
 
-		intervalStart := time.Now()
-
 		candlesticks := map[string]candlestick.Candlestick{}
 
 		for {
@@ -116,7 +115,7 @@ func initializeRecordPrices() error {
 			// ticker
 			if _, ok := candlesticks[ticker]; !ok {
 				candlesticks[ticker] = candlestick.Candlestick{
-					CreatedAt: intervalStart,
+					CreatedAt: time.Now(),
 					Exchange:  candlestick.ExchangeCoinbase,
 					Ticker:    ticker,
 				}
@@ -139,8 +138,26 @@ func initializeRecordPrices() error {
 			}
 
 			// check if we should record the current interval
-			if time.Now().Sub(intervalStart) >=
+			if time.Now().Sub(candlesticks[ticker].CreatedAt) >=
 				time.Duration(recordPricesInterval)*time.Second {
+
+				// check if this candlestick opens a new hour or day based on
+				// the last candlestick added
+				last, err := candlestick.GetLastByTicker(context.Background(),
+					data.DB(), candlestick.ExchangeCoinbase, ticker)
+				if err != nil && err != gorm.ErrRecordNotFound {
+					logrus.Error(err)
+				} else {
+
+					if last.CreatedAt.Hour() != candlesticks[ticker].CreatedAt.Hour() {
+						candlesticks[ticker] = candlesticks[ticker].SetOpensHour(true)
+					}
+
+					if last.CreatedAt.Day() != candlesticks[ticker].CreatedAt.Day() {
+						candlesticks[ticker] = candlesticks[ticker].SetOpensDay(true)
+					}
+
+				}
 
 				// set the close price and save the ticker to the database
 				candlesticks[ticker] = candlesticks[ticker].SetClose(currentPrice)
@@ -151,11 +168,6 @@ func initializeRecordPrices() error {
 				}
 
 				delete(candlesticks, ticker)
-				intervalStart = intervalStart.Add(
-					time.Duration(recordPricesInterval) * time.Second)
-				if intervalStart.Before(time.Now()) {
-					intervalStart = time.Now()
-				}
 			}
 
 		}

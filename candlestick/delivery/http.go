@@ -96,12 +96,29 @@ func listCandlestick(c *gin.Context) {
 	exchange := strings.ToUpper(c.Param("exchange"))
 	ticker := strings.ToUpper(c.Param("ticker"))
 
-	// TODO: add a way to specify date range and sample size, right now we're
-	// just looking at all candlesticks over the past 24 hours
+	// default date range to the current day
+	end := time.Now()
+	start := time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0,
+		end.Location())
+
+	// TODO: get start and end date from GET params
+
+	var hourly bool
+	var daily bool
+
+	if end.Sub(start) > time.Hour*24*60 {
+		// if the date range is larger than two months only retrieve
+		// candlesticks that open a new day
+		daily = true
+	} else if end.Sub(start) > time.Hour*24 {
+		// if the date range is larger than a day only retrieve candlesticks
+		// that open a new hour
+		hourly = true
+	}
 
 	// retrieve candlestick data
 	candlesticks, err := candlestick.ListByTicker(c, data.DB(), exchange,
-		ticker, time.Now().Add(-24*time.Hour), time.Now())
+		ticker, hourly, daily, start, end)
 	if err != nil {
 		logrus.Error(err)
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
