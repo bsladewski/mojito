@@ -10,12 +10,12 @@ import (
 	"mojito/server"
 
 	// import APIs
-	_ "mojito/candlestick/delivery"
 	_ "mojito/health"
+	_ "mojito/market/delivery"
 	_ "mojito/user/delivery"
 
-	// import data feeds
-	_ "mojito/coinbase"
+	// import market data feeds
+	_ "mojito/market/feed"
 
 	"github.com/sirupsen/logrus"
 )

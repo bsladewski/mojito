@@ -3,35 +3,8 @@ package user
 import (
 	"time"
 
-	"mojito/data"
-
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
-
-// init migrates the database model.
-func init() {
-	data.DB().AutoMigrate(
-		User{},
-		Login{},
-	)
-
-	// check if we should use mock data
-	if !data.UseMockData() {
-		return
-	}
-
-	// load mock data
-	for _, u := range mockUsers {
-		if err := data.DB().Clauses(clause.OnConflict{
-			UpdateAll: true,
-		}).Create(&u).Error; err != nil {
-			logrus.Fatal(err)
-		}
-	}
-
-}
 
 /* Data Types */
 

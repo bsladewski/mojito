@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"mojito/cache"
-	"mojito/candlestick"
 	"mojito/data"
 	"mojito/httperror"
+	"mojito/market"
 	"mojito/server"
 	"mojito/user"
 
@@ -40,7 +40,7 @@ const (
 func candlestickSpec(c *gin.Context) {
 
 	// retrieve available exchanges
-	exchangeList, err := candlestick.ListExchanges(c, data.DB())
+	exchangeList, err := market.ListExchanges(c, data.DB())
 	if err != nil {
 		logrus.Error(err)
 		c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
@@ -57,7 +57,7 @@ func candlestickSpec(c *gin.Context) {
 	for _, exchange := range exchangeList {
 
 		// retrieve tickers
-		tickerList, err := candlestick.ListTickers(c, data.DB(), exchange)
+		tickerList, err := market.ListTickers(c, data.DB(), exchange)
 		if err != nil {
 			logrus.Error(err)
 			c.JSON(http.StatusInternalServerError, httperror.ErrorResponse{
@@ -72,14 +72,14 @@ func candlestickSpec(c *gin.Context) {
 		for _, ticker := range tickerList {
 			tickers = append(tickers, candlestickSpecTicker{
 				ID:   ticker,
-				Name: candlestick.GetTickerName(exchange, ticker),
+				Name: ticker,
 			})
 		}
 
 		// add exchange data to response
 		response.Exchanges = append(response.Exchanges, candlestickSpecExchange{
 			ID:      exchange,
-			Name:    candlestick.GetExchangeName(exchange),
+			Name:    exchange,
 			Tickers: tickers,
 		})
 
@@ -117,7 +117,7 @@ func listCandlestick(c *gin.Context) {
 	}
 
 	// retrieve candlestick data
-	candlesticks, err := candlestick.ListByTicker(c, data.DB(), exchange,
+	candlesticks, err := market.ListByTicker(c, data.DB(), exchange,
 		ticker, hourly, daily, start, end)
 	if err != nil {
 		logrus.Error(err)

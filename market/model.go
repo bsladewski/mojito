@@ -1,17 +1,8 @@
-package candlestick
+package market
 
 import (
 	"time"
-
-	"mojito/data"
 )
-
-// init migrates the database model.
-func init() {
-	data.DB().AutoMigrate(
-		Candlestick{},
-	)
-}
 
 /* Data Types */
 
@@ -20,8 +11,8 @@ type Candlestick struct {
 	ID        uint      `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time `gorm:"index" json:"created_at"`
 
-	OpensDay  bool `gorm:"index" json:"opens_day"`
-	OpensHour bool `gorm:"index" json:"opens_hour"`
+	OpensDay  bool `gorm:"index" json:"-"`
+	OpensHour bool `gorm:"index" json:"-"`
 
 	Exchange string  `gorm:"index" json:"exchange"`
 	Ticker   string  `gorm:"index" json:"ticker"`

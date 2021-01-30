@@ -1,45 +1,8 @@
-package candlestick
+package market
 
 import (
 	"fmt"
 )
-
-const (
-	// ExchangeCoinbase represents data related to the Coinbase exchange.
-	ExchangeCoinbase = "COINBASE"
-)
-
-// exchangeNames maps exchange ids to display names.
-var exchangeNames = map[string]string{
-	ExchangeCoinbase: "Coinbase",
-}
-
-const (
-	// TickerBTC represents data related to the bitcoin cryptocurrency.
-	TickerBTC = "BTC"
-)
-
-// tickerNames maps ticker ids to display names.
-var tickerNames = map[string]string{
-	fmt.Sprintf("%s-%s", ExchangeCoinbase, TickerBTC): "Bitcoin",
-}
-
-// GetExchangeName retrieves a display name for the specified exchange.
-func GetExchangeName(exchange string) string {
-	if name, ok := exchangeNames[exchange]; ok {
-		return name
-	}
-	return "N/A"
-}
-
-// GetTickerName retrieves a display name for the specified exchange and ticker.
-func GetTickerName(exchange, ticker string) string {
-	key := fmt.Sprintf("%s-%s", exchange, ticker)
-	if name, ok := tickerNames[key]; ok {
-		return name
-	}
-	return "N/A"
-}
 
 // SetOpen sets the open price to the supplied value, result is returned as a
 // new candlestick.

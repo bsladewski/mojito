@@ -1,4 +1,4 @@
-package candlestick
+package market
 
 import (
 	"context"
@@ -103,7 +103,7 @@ func ListTickers(ctx context.Context, db *gorm.DB,
 
 }
 
-// Save inserts or updates the supplied candlestick record.
-func Save(ctx context.Context, db *gorm.DB, item Candlestick) error {
+// SaveCandlestick inserts or updates the supplied candlestick record.
+func SaveCandlestick(ctx context.Context, db *gorm.DB, item Candlestick) error {
 	return db.Save(&item).Error
 }

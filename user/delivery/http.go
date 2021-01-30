@@ -245,7 +245,7 @@ func signupVerify(c *gin.Context) {
 
 	// save user record
 	if err := user.SaveUser(c, data.DB(), u); err != nil {
-		logrus.WithError(err)
+		logrus.Error(err)
 		c.JSON(http.StatusBadRequest, httperror.ErrorResponse{
 			ErrorMessage: invalidToken,
 		})
