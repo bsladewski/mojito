@@ -23,6 +23,25 @@ type User struct {
 	Verified  bool   `json:"verified"`   // whether the user has completed email verification
 
 	LoggedOutAt *time.Time `json:"logged_out_at"` // records the last time the user explicitly logged out
+
+	Settings UserSettings
+}
+
+// UserSettings stores settings for a user account.
+type UserSettings struct {
+	ID        uint      `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+
+	UserID uint `gorm:"index" json:"user_id"`
+
+	// Coinbase credentials for executing trades via API
+	CoinbaseAPIKey    string `json:"coinbase_api_key"`
+	CoinbaseSignature string `json:"coinbase_signature"`
+
+	// Alpaca credentials for executing trades via API
+	AlpacaAPIKey    string `json:"alpaca_api_key"`
+	AlpacaSecretKey string `json:"alpaca_secret_key"`
 }
 
 // Login stores identifiers for validating user auth tokens.

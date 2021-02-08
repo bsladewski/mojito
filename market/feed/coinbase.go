@@ -30,6 +30,14 @@ type coinbaseFeed struct {
 	close        bool
 }
 
+// coinbaseSubscribeMessage is the payload used to subscribe to price data from
+// the Coinbase API.
+type coinbaseSubscribeMessage struct {
+	Type       string   `json:"type"`
+	ProductIDs []string `json:"product_ids"`
+	Channels   []string `json:"channels"`
+}
+
 // coinbasePriceData is used to read price data from the Coinbase ticker feed.
 type coinbasePriceData struct {
 	Type      string    `json:"type"`
@@ -58,6 +66,37 @@ func (c *coinbaseFeed) GetChannel(exchange,
 		channel = make(chan market.Candlestick)
 		c.channels[key] = channel
 	}
+
+	return channel, nil
+}
+
+func (c *coinbaseFeed) AddSecurity(exchange,
+	ticker string) (chan market.Candlestick, error) {
+	key := formatCoinbaseFeedKey(exchange, ticker)
+
+	c.mutex.Lock()
+	if channel, ok := c.channels[key]; ok {
+		// if the channel for this security if it already exists
+		c.mutex.Unlock()
+		return channel, nil
+	}
+	defer c.mutex.Unlock()
+
+	// create the payload to subscribe to a new security
+	subscribeMessage := coinbaseSubscribeMessage{
+		Type:       "subscribe",
+		ProductIDs: []string{fmt.Sprintf("%s-USD", strings.ToUpper(ticker))},
+		Channels:   []string{"ticker"},
+	}
+
+	// send the subscribe message
+	if err := c.conn.WriteJSON(subscribeMessage); err != nil {
+		return nil, err
+	}
+
+	// create a channel for the new candlesticks
+	channel := make(chan market.Candlestick)
+	c.channels[key] = channel
 
 	return channel, nil
 }
@@ -211,25 +250,20 @@ func (c *coinbaseFeed) aggregate(exchange, ticker string,
 
 // connectCoinbaseFeed connects to a feed of price data through the Coinbase
 // API.
-func connectCoinbaseFeed(platform feedPlatform) (Feed, error) {
+func connectCoinbaseFeed(platform platformFeed) (Feed, error) {
 
 	productIDList := []string{}
 
 	// build a list of Coinbase product ids from the platform spec
 	for _, security := range platform.Securities {
-		productID := fmt.Sprintf("%s-%s",
-			strings.ToUpper(security.Ticker),
-			strings.ToUpper(security.ReferenceCurrency))
+		productID := fmt.Sprintf("%s-USD",
+			strings.ToUpper(security.Ticker))
 		productIDList = append(productIDList, productID)
 	}
 
 	// create the payload that will be used to initialize the connection to the
 	// Coinbase ticker feed
-	var subscribeMessage = struct {
-		Type       string   `json:"type"`
-		ProductIDs []string `json:"product_ids"`
-		Channels   []string `json:"channels"`
-	}{
+	subscribeMessage := coinbaseSubscribeMessage{
 		Type:       "subscribe",
 		ProductIDs: productIDList,
 		Channels:   []string{"ticker"},
@@ -261,7 +295,9 @@ func connectCoinbaseFeed(platform feedPlatform) (Feed, error) {
 		for !feed.close {
 
 			// read a message from the feed
+			feed.mutex.Lock()
 			_, message, err := conn.ReadMessage()
+			feed.mutex.Unlock()
 			if err != nil {
 				logrus.Error(err)
 
@@ -269,14 +305,18 @@ func connectCoinbaseFeed(platform feedPlatform) (Feed, error) {
 					// if we run into an error attempting to read from the
 					// feed, close the existing connection and attempt to
 					// re-establish it after waiting for one minute
+					feed.mutex.Lock()
 					feed.conn.Close()
+					feed.mutex.Unlock()
 					time.Sleep(time.Minute)
 					if feed.close {
 						break
 					}
 
+					feed.mutex.Lock()
 					feed.conn, _, err = websocket.DefaultDialer.Dial(
 						platform.BaseURL, nil)
+					feed.mutex.Unlock()
 					if err != nil {
 						logrus.Error(err)
 					} else {
@@ -313,7 +353,9 @@ func connectCoinbaseFeed(platform feedPlatform) (Feed, error) {
 
 		}
 
+		feed.mutex.Lock()
 		conn.Close()
+		feed.mutex.Unlock()
 
 	}()
 

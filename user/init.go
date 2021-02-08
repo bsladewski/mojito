@@ -19,20 +19,6 @@ func init() {
 		Login{},
 	)
 
-	// check if we should use mock data
-	if !data.UseMockData() {
-		return
-	}
-
-	// load mock data
-	for _, u := range mockUsers {
-		if err := data.DB().Clauses(clause.OnConflict{
-			UpdateAll: true,
-		}).Create(&u).Error; err != nil {
-			logrus.Fatal(err)
-		}
-	}
-
 	// get access key for signing access tokens
 	accessKey = env.MustGetString(accessKeyVariable)
 
@@ -46,6 +32,19 @@ func init() {
 	// configure refresh token expiration time
 	refreshExpirationHours = time.Duration(
 		env.GetIntSafe(refreshExpirationHoursVariable, 168)) * time.Hour
+
+	if !data.UseMockData() {
+		return
+	}
+
+	// load mock data
+	for _, u := range mockUsers {
+		if err := data.DB().Clauses(clause.OnConflict{
+			UpdateAll: true,
+		}).Create(&u).Error; err != nil {
+			logrus.Fatal(err)
+		}
+	}
 
 }
 

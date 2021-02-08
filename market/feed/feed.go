@@ -8,11 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Define supported platforms.
-const (
-	PlatformCoinbase = "coinbase"
-)
-
 // ErrNoPriceData is returned when a request is made for price data but the
 // current interval has no volume.
 var ErrNoPriceData = errors.New("no price data for this interval")
@@ -24,8 +19,11 @@ var ErrTickerNotFound = errors.New("ticker not found")
 // Feed encapsulates a stream of market data.
 type Feed interface {
 	// GetChannel retrieves a channel that will receive a candlestick every time
-	// a new candlestick is committed.
+	// the feed commits price data.
 	GetChannel(exchange, ticker string) (chan market.Candlestick, error)
+	// AddSecurity will subscribe the feed to a new ticker and return a channel
+	// that will receive a candlestick every time the feed commits price data.
+	AddSecurity(exchange, ticker string) (chan market.Candlestick, error)
 	// Check retrieves the candlestick that is currently being aggregated.
 	Check(exchange, ticker string) (market.Candlestick, error)
 	// Commit saves the candlestick that is currently being aggregated and
@@ -46,7 +44,7 @@ var mutex = &sync.Mutex{}
 // existing connection already exists it will be closed and replaced by the new
 // connection. If no platform integration exists this function will log a
 // warning and return nil for the feed and error.
-func Connect(platform *feedPlatform) (Feed, error) {
+func Connect(platform *platformFeed) (Feed, error) {
 
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -64,8 +62,8 @@ func Connect(platform *feedPlatform) (Feed, error) {
 	var err error
 
 	// connect to the appropriate feed based on the platform name
-	switch platform.Name {
-	case PlatformCoinbase:
+	switch platform.Platform.Key {
+	case market.PlatformCoinbase:
 		feed, err = connectCoinbaseFeed(*platform)
 		if err != nil {
 			return nil, err

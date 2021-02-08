@@ -1,6 +1,7 @@
 package feed
 
 import (
+	"mojito/market"
 	"time"
 
 	"gorm.io/gorm"
@@ -8,50 +9,52 @@ import (
 
 /* Data Types */
 
-// feedPlatform stores configuration needed to connect to a feed of market data.
-type feedPlatform struct {
+// platformFeed stores configuration needed to connect to a feed of market data.
+type platformFeed struct {
 	ID        uint           `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+
+	PlatformID uint            `json:"platform_id"`
+	Platform   market.Platform `json:"platform"`
 
 	Name     string        `gorm:"index" json:"name"`
 	Enabled  bool          `json:"enabled"`
 	BaseURL  string        `json:"base_url"`
 	Interval time.Duration `json:"interval"`
 
-	Securities []feedPlatformSecurity `json:"securities"`
+	Securities []platformFeedSecurity `json:"securities"`
 }
 
-// feedPlatformSecurity stores information about the price data we want to
-// retrieve in a platform feed.
-type feedPlatformSecurity struct {
+// platformFeedSecurity stores information about the price data we want to
+// retrieve in a platform feed. Securities defined in this table will be
+// subscribed to when the feed is initialized.
+type platformFeedSecurity struct {
 	ID             uint `gorm:"primarykey" json:"id"`
-	FeedPlatformID uint `json:"feed_platform_id"`
+	PlatformFeedID uint `json:"platform_feed_id"`
 
-	Exchange          string `json:"exchange"`
-	Ticker            string `json:"ticker"`
-	ReferenceCurrency string `json:"reference_currency"`
+	Exchange string `json:"exchange"`
+	Ticker   string `json:"ticker"`
 }
 
 /* Mock Data */
 
-var mockFeedPlatforms = []feedPlatform{
+var mockFeedPlatforms = []platformFeed{
 	{
-		ID:       1,
-		Name:     PlatformCoinbase,
-		Enabled:  true,
-		BaseURL:  "wss://ws-feed.pro.coinbase.com",
-		Interval: 60 * time.Second,
+		ID:         1,
+		PlatformID: 1,
+		Enabled:    true,
+		BaseURL:    "wss://ws-feed.pro.coinbase.com",
+		Interval:   60 * time.Second,
 	},
 }
 
-var mockFeedPlatformSecurities = []feedPlatformSecurity{
+var mockFeedPlatformSecurities = []platformFeedSecurity{
 	{
-		ID:                1,
-		FeedPlatformID:    1,
-		Exchange:          exchangeCoinbase,
-		Ticker:            "BTC",
-		ReferenceCurrency: "USD",
+		ID:             1,
+		PlatformFeedID: 1,
+		Exchange:       exchangeCoinbase,
+		Ticker:         "BTC",
 	},
 }

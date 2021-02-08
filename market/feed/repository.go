@@ -8,12 +8,12 @@ import (
 
 // ListPlatform retrieves all feed platforms, takes an optional flag that can be
 // used to filter by enabled platforms.
-func ListPlatform(ctx context.Context, db *gorm.DB, enabled *bool) ([]*feedPlatform,
-	error) {
+func ListPlatform(ctx context.Context, db *gorm.DB,
+	enabled *bool) ([]*platformFeed, error) {
 
-	var items []*feedPlatform
+	var items []*platformFeed
 
-	res := db.Preload("Securities").Model(&feedPlatform{})
+	res := db.Preload("Platform").Preload("Securities").Model(&platformFeed{})
 
 	if enabled != nil {
 		res = res.Where("enabled = ?", *enabled)

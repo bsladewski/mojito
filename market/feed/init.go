@@ -14,8 +14,8 @@ func init() {
 
 	// migrate the package model
 	data.DB().AutoMigrate(
-		feedPlatform{},
-		feedPlatformSecurity{},
+		platformFeed{},
+		platformFeedSecurity{},
 	)
 
 	// load mock data if the server is configured to use it
